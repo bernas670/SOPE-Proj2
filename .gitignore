@@ -1,0 +1,14 @@
+# ignore all
+*
+
+# unignore files
+!.gitignore
+!README.md
+!LICENSE
+!specification.pdf
+!Makefile
+!*.c
+!*.h
+
+# unignore directories
+!src/
