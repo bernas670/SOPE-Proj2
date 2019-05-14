@@ -12,3 +12,5 @@
 
 # unignore directories
 !src/
+!src/server
+!src/user
