@@ -49,16 +49,24 @@ tlv_request_t *pop(request_queue_t *q);
 /**
  * @brief Checks if the specified queue is empty or not
  * 
- * @param queue     Pointer to the queue that will be analised
- * @return int      Returns 0 if the queue is empty, 1 if it is not
+ * @param q     Pointer to the queue that will be analised
+ * @return int  Returns 1 if the queue is empty, 0 if it is not
  */
 int is_empty(request_queue_t *q);
 
 /**
+ * @brief Checks if the specified queue is full or not
+ * 
+ * @param q     Pointer to the queue that will be analised
+ * @return int  Returns 1 if the queue is full, 0 if it is not
+ */
+int is_full(request_queue_t *q);
+
+/**
  * @brief Gets the number of elements present in the queue
  * 
- * @param queue     Pointer to the queue that will be analised
- * @return int      Returns the number of elements of the queue
+ * @param q     Pointer to the queue that will be analised
+ * @return int  Returns the number of elements of the queue
  */
 int num_elements(request_queue_t * q);
 

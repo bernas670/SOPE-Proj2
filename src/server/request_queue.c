@@ -77,6 +77,14 @@ int is_empty(request_queue_t *q) {
     return 0;
 }
 
+int is_full(request_queue_t *q) {
+    if (q->counter == q->size) {
+        return 1;
+    }
+
+    return 0;
+}
+
 int num_elements(request_queue_t * q) {
     return q->counter;
 }
