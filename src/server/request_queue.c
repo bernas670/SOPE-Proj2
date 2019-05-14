@@ -1,6 +1,8 @@
+#include <stdlib.h>
 
 
 #include "request_queue.h"
+
 
 /**
  * @brief Adjusts the in and out attributes of the queue to the 
@@ -53,18 +55,18 @@ int push(request_queue_t *q, tlv_request_t *request) {
     return 0;
 }
 
-int pop(request_queue_t *q, tlv_request_t *request) {
+tlv_request_t *pop(request_queue_t *q) {
     if (is_empty(q)) {
-        return 1;
+        return NULL;
     }
 
-    request = q->requests[q->out];
+    tlv_request_t *r = q->requests[q->out];
     q->out++;
     q->counter--;
 
     adjust_queue(q);
     
-    return 0;
+    return r;
 }
 
 int is_empty(request_queue_t *q) {

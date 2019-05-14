@@ -39,13 +39,12 @@ void delete_request_queue(request_queue_t *q);
 int push(request_queue_t *q, tlv_request_t *request);
 
 /**
- * @brief Pops the request at the head of the queue from the specified queue
+ * @brief Pop the pointer to request that is at the head of the queue
  * 
- * @param queue     Pointer to the queue
- * @param request   Pointer to the popped request
- * @return int      Returns 0 in case of success, 1 if the queue is empty
+ * @param q                 Pointer to the queue
+ * @return tlv_request_t*   Returns a pointer to a request if successful, NULL in case of error
  */
-int pop(request_queue_t *q, tlv_request_t *request);
+tlv_request_t *pop(request_queue_t *q);
 
 /**
  * @brief Checks if the specified queue is empty or not
