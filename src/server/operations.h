@@ -1,7 +1,7 @@
 #ifndef OPERATIONS_H
 #define OPERATIONS_H
 
-#include "sope.h"
+#include "../sope.h"
 
 
 void generateSalt(bank_account_t* account);

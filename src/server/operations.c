@@ -12,7 +12,7 @@ void generateSalt(bank_account_t* account) {
     time_t t;    
     srand((unsigned) time(&t));
 
-    for (int i = 0; i < strlen(account->salt); i++) {
+    for (size_t i = 0; i < strlen(account->salt); i++) {
         account->salt[i] = characters[rand() % strlen(characters)];
     }
 }
