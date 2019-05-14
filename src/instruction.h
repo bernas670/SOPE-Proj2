@@ -33,4 +33,7 @@ void set_arg2(instruction *ptr, char *i_args);
 char *get_arg3(instruction *ptr);
 void set_arg3(instruction *ptr, char *i_args);
 
+int getPid(instruction *ptr);
+
+
 #endif

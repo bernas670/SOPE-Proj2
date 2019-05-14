@@ -94,3 +94,7 @@ char *get_arg3(instruction *ptr){
 void set_arg3(instruction *ptr, char *i_args){
     ptr->arg3 = i_args;
 }
+
+int getPid(instruction *ptr){
+    return ptr->pid;
+}
