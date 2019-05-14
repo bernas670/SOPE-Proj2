@@ -68,6 +68,12 @@ int get_arguments(int argc, char* argv[],instruction *data){
     //process id
     
     // falta testar se é valido
+    for(unsigned int i = 0; i < strlen(argv[1]); i++){
+            if((argv[1])[i] < '0' || (argv[1])[i]> '9'){
+                printf("id error\n");
+                return -1;
+            }
+        }
     set_id(data, atoi(argv[1]));
 
 
@@ -159,11 +165,9 @@ int get_arguments(int argc, char* argv[],instruction *data){
 
         }
 
-        // ATENÇÃO !! preciso separar args de maneira diferente dependendo da opção do argv[4]
-
     }
 
-
+    return 0;
 }
 
 
