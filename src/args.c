@@ -58,7 +58,14 @@ int get_arguments(int argc, const* argv[],instruction *data){
         set_flag(data,true);
     }
 
+    // process last argument 
+    if(get_flag){
 
+        set_args(data, argv[5]);
+
+        // ATENÇÃO !! preciso separar args de maneira diferente dependendo da opção do argv[4]
+
+    }
 
 
 }
