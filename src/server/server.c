@@ -8,6 +8,7 @@
 #include "../sope.h"
 #include "operations.h"
 #include "office.h"
+#include "request_queue.h"
 
 #define ARGS_ERROR 1
 #define HASH_ERROR 2
@@ -75,7 +76,7 @@ int main(int argc, char* argv[]) {
 
     /* Create counter threads */
     pthread_t threads[num_offices];
-    for (int i = 0; i < num_offices; i++) {
+    for (int i = 1; i < num_offices; i++) {
         threads[i] = i;
 
         office_args_t *args = malloc(sizeof(office_args_t));
@@ -94,12 +95,14 @@ int main(int argc, char* argv[]) {
     /* FIFO is created and open */
 
 
+    /* Loop for the server to receive messages
+       If the server is ordered to shutdown this loop will end */
     while (!shutdown) {
 
     }
 
 
-    /* Close request FIFO */
+    /* Close request FIFO because the shutdown command was received */
     close(request_fd);
 
     /* Wait for all requests in the queue to be processed */
