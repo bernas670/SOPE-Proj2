@@ -1,7 +1,9 @@
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 #include "sope.h"
+#include "office.h"
 
 #define ARGS_ERROR 1
 #define HASH_ERROR 2
@@ -47,6 +49,11 @@ int main(int argc, char* argv[]) {
 
 
     /* Create counter threads */
+    pthread_t threads[num_offices];
+    for (int i = 0; i < num_offices; i++) {
+        tid[i] = i;
+        pthread_create(&threads[i], NULL, office_main, NULL);
+    }
 
     /* All counters are created */
 
