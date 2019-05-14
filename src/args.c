@@ -1,11 +1,67 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "instruction.h"
 #include "constants.h"
 
+int arg_split(instruction *data, char* args, int opt){
 
+    const char s[] = " ";
+    char* token;
+
+    if(opt == 0){
+
+        // testar se o primeiro arg é valido -- EM FALTA !!
+        token = strtok(args, s);
+        for(unsigned int i = 0; i < strlen(token); i++){
+            if(token[i] < '0' || token[i] > '9'){
+                printf("Arg1 error\n");
+                return -1;
+            }
+        }
+        set_arg1(data, token);
+
+        token = strtok(NULL, s);
+        for(unsigned int i = 0; i < strlen(token); i++){
+            if(token[i] < '0' || token[i] > '9'){
+                printf("Arg2 error\n");
+                return -1;
+            }
+        }
+        set_arg2(data, token);
+
+        token = strtok(NULL, s);
+        if(strlen(token) < 8 || strlen(token) > 20){
+            printf("Arg3 error\n");
+            return -1;
+        }
+        set_arg3(data, token);
+
+    }
+    else if(opt == 2){
+        token = strtok(args, s);
+        for(unsigned int i = 0; i < strlen(token); i++){
+            if(token[i] < '0' || token[i] > '9'){
+                printf("Arg1 error\n");
+                return -1;
+            }
+        }
+        set_arg1(data, token);
+
+        token = strtok(NULL, s);
+        for(unsigned int i = 0; i < strlen(token); i++){
+            if(token[i] < '0' || token[i] > '9'){
+                printf("Arg2 error\n");
+                return -1;
+            }
+        }
+        set_arg2(data, token);
+    }
+
+    return 0;
+}
 
 int get_arguments(int argc, char* argv[],instruction *data){
 
@@ -19,7 +75,7 @@ int get_arguments(int argc, char* argv[],instruction *data){
     //process password
     int length = strlen(argv[2]);
 
-    if(length-2 < MIN_PASSWORD_LEN || length-2 > MAX_PASSWORD_LEN){
+    if(length < MIN_PASSWORD_LEN || length > MAX_PASSWORD_LEN){
         printf("size not allowed\n");
         return -1;
     }
@@ -44,17 +100,64 @@ int get_arguments(int argc, char* argv[],instruction *data){
 
     //process flag
     if(atoi(argv[4]) == 1 || atoi(argv[4]) == 3){
-        set_flag(data,false);
+        set_flag(data, false);
     }
 
     if(atoi(argv[4]) == 0 || atoi(argv[4]) == 2){
-        set_flag(data,true);
+        set_flag(data, true);
     }
 
     // process last argument 
-    if(get_flag){
+    if(get_flag(data)){
 
-        set_args(data, argv[5]);
+        const char s[4] = " ";
+        char* token;
+        int counter = 0;
+        char* args = strdup(argv[5]);
+
+        // testa se o ultimo argumento é valido
+        if(atoi(argv[4]) == 0){
+
+            token = strtok(argv[5], s);
+
+            while(token != NULL){
+                token = strtok(NULL, s);
+                counter++;
+            }
+
+            if(counter != 3){
+                printf("invalid args\n");
+                return -1;
+            }
+            else{
+                if(arg_split(data, args, 0) == -1){
+                    return -1;
+                }
+            }
+
+        }
+
+        // testa se o ultimo argumento é valido
+        else if(atoi(argv[4]) == 2){
+            
+            token = strtok(argv[5], s);
+
+            while(token != NULL){
+                token = strtok(NULL, s);
+                counter++;
+            }
+
+            if(counter != 2){
+                printf("invalid args\n");
+                return -1;
+            }
+            else{
+                if(arg_split(data, args, 2) == -1){
+                    return -1;
+                }
+            }
+
+        }
 
         // ATENÇÃO !! preciso separar args de maneira diferente dependendo da opção do argv[4]
 
@@ -62,3 +165,6 @@ int get_arguments(int argc, char* argv[],instruction *data){
 
 
 }
+
+
+
