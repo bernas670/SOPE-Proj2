@@ -32,3 +32,8 @@
 #define USER_FIFO_PATH_LEN (sizeof(USER_FIFO_PATH_PREFIX) + WIDTH_ID + 1)
 
 #define FIFO_TIMEOUT_SECS 30
+
+
+/* =========================================================================== */
+
+#define ERROR_ACCOUNT_ID 5000

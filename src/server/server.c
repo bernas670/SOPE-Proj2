@@ -14,6 +14,7 @@
 #define ARGS_ERROR 1
 #define HASH_ERROR 2
 
+
 int main(int argc, char* argv[]) {
 
     if (argc != 3) {
@@ -41,19 +42,25 @@ int main(int argc, char* argv[]) {
 
     
     /* Create bank account array to store all accounts and mutex array to lock account action */
-    bank_account_t accounts[MAX_BANK_ACCOUNTS];
-    pthread_mutex_t account_mutex[MAX_BANK_ACCOUNTS];
+    bank_account_t accounts[MAX_BANK_ACCOUNTS + 1];
+    bank_account_t admin_account;
+    admin_account.account_id = ERROR_ACCOUNT_ID;
+    for (int i = 1; i <= MAX_BANK_ACCOUNTS + 1; i++) {
+        accounts[i] = admin_account;
+    }
+    pthread_mutex_t account_mutex[MAX_BANK_ACCOUNTS + 1];
 
 
     /* Create admin account */
-    bank_account_t admin_account;
     admin_account.account_id = ADMIN_ACCOUNT_ID;
     admin_account.balance = 0;
     generateSalt(&admin_account);
-    if (generateHash(admin_password, &admin_account)) {
+    char hash[HASH_LEN + 1];
+    if (generateHash(admin_password, &admin_account, hash)) {
         printf("Error generating admin hash! \n");
         return HASH_ERROR;
     }
+    strcpy(admin_account.hash, hash);
     /* Admin account created */
 
 
@@ -113,7 +120,7 @@ int main(int argc, char* argv[]) {
     /* Create and open FIFO */
     mkfifo(SERVER_FIFO_PATH, 0666);                                 // TODO: deal with errors
     printf("Created server FIFO\n");
-    int request_fd = open(SERVER_FIFO_PATH, O_RDONLY);              // TODO: deal with errors
+    int request_fd = open(SERVER_FIFO_PATH, O_RDONLY | O_NONBLOCK); // TODO: deal with errors
     int fifo_open = 1;
     /* FIFO is created and open */
 
@@ -127,8 +134,8 @@ int main(int argc, char* argv[]) {
     while (!shutdown || !fifo_eof) {
 
         if (shutdown && fifo_open) {
-            close(request_fd);
             fifo_open = 0;
+            chmod(SERVER_FIFO_PATH, 0444);  // TODO: deal with errors
         }
 
         pthread_mutex_lock(&queue_lock);
@@ -160,6 +167,7 @@ int main(int argc, char* argv[]) {
 
 
     /* Close and request FIFO from systme because the shutdown command was received */
+    close(request_fd);
     remove(SERVER_FIFO_PATH);
 
 

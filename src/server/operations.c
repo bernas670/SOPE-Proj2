@@ -39,3 +39,15 @@ int generateHash(char* password, bank_account_t* account, char* hash) {
     return 0;      
 }
 
+
+int authenticate(char* password, bank_account_t* account) {
+
+    char hash[HASH_LEN + 1];
+    generateHash(password, account, hash);
+
+    if (strmcp(hash, account->hash)) {
+        return 0;
+    }
+
+    return 1;
+}

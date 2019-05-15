@@ -4,11 +4,12 @@ CFLAGS = -g -Wall -Wextra -Wunused -pthread
  
 # Directory names
 SOURCE_DIR = src
+SERVER_DIR = src/server
 BUILD_DIR = build
 
 # File names
-EXEC = bank
-SOURCES = $(wildcard $(SOURCE_DIR)/*.c)
+EXEC = server
+SOURCES = $(wildcard $(SOURCE_DIR)/*.c $(SERVER_DIR)/*.c)
 OBJECTS =  $(patsubst $(SOURCE_DIR)/%.c,$(BUILD_DIR)/%.o,$(SOURCES))
 
 dir_guard = @mkdir -p $(BUILD_DIR)
