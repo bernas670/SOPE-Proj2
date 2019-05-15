@@ -18,13 +18,14 @@ void generateSalt(bank_account_t* account) {
 }
 
 
-int generateHash(char* password, bank_account_t* account) {
+int generateHash(char* password, bank_account_t* account, char* hash) {
 
     const int buf_size = 100;
     char buf[buf_size];
 
     sprintf(buf, "echo -n %s%s | sha256sum", password, account->salt);
 
+    // TODO: change popen to pipes
     FILE* filep = popen(buf, "r"); //READ-ONLY
 
     if (filep == NULL)
@@ -33,7 +34,8 @@ int generateHash(char* password, bank_account_t* account) {
     fread(buf, 1, buf_size, filep);
     pclose(filep);
 
-    buf[strlen(account->hash)] = '\0';
-    strcpy(account->hash, buf);
+    buf[strlen(HASH_LEN)] = '\0';
+    strcpy(hash, buf);
     return 0;      
 }
+

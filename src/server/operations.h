@@ -5,7 +5,7 @@
 
 
 void generateSalt(bank_account_t* account);
-int generateHash(char* password, bank_account_t* account);
+int generateHash(char* password, bank_account_t* account, char* hash);
 
 
 
