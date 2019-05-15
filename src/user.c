@@ -141,14 +141,31 @@ int main(int argc,char* argv[]) {
 
 
 
-    
-    //create a FIFO to send information to the server
-    
+   //Create a fifo to receive information
 
+
+   char* fifo_name;
+   strcpy(fifo_name, "/tmp/secure_");
+   char a[256];
+   int num=getPid(data);
+   sprintf(a,"%d",num);
+
+   strcat(fifo_name,a);
+
+   printf("%s\n",fifo_name);
+   
+
+
+
+    
+    //send information to the server
+    
+/*
     int fd;
     fd=open(SERVER_FIFO_PATH, O_WRONLY|O_APPEND);
     write(fd, &request, sizeof(request));
 
-
+*/
+    
     return 0;
 }
