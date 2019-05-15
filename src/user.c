@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "args.h"
 #include "types.h"
@@ -104,8 +107,11 @@ int main(int argc,char* argv[]) {
     create_request(data, &request);
     
 
+
+
     // confirma que esta tudo certo
 
+    /*
     printf("REQUEST TYPE : %d\n", request.type);
     printf("REQUEST LENGTH : %d\n", request.length);
     printf("REQUEST VALUE : \n");
@@ -131,9 +137,18 @@ int main(int argc,char* argv[]) {
         printf("TRANSFER ID : %d\n", request.value.transfer.account_id);
         printf("TRANFER BALANCE : %d\n", request.value.transfer.amount);
     }
+    */
+
+
+
     
+    //create a FIFO to send information to the server
     
-    
+
+    int fd;
+    fd=open(SERVER_FIFO_PATH, O_WRONLY|O_APPEND);
+    write(fd, &request, sizeof(request));
+
 
     return 0;
 }
