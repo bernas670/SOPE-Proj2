@@ -33,7 +33,24 @@ void create_request(instruction *data, tlv_request_t *request){
     
     default:
         break;
-    } 
+    }
+
+    switch (request->type) {
+        case OP_CREATE_ACCOUNT: 
+            request->length = sizeof(req_create_account_t);
+            break;
+        case OP_BALANCE:
+            request->length = 0;
+            break;
+        case OP_TRANSFER:
+            request->length = sizeof(req_transfer_t);
+            break;
+        case OP_SHUTDOWN:
+            request->length = 0;
+            break;
+        default:
+            printf("error in length\n");
+    }
 
     
 
@@ -83,7 +100,7 @@ void create_request(instruction *data, tlv_request_t *request){
 
     request->value = value;
 
-    request->length = sizeof(request->value)+sizeof(request->type);
+    // request->length = sizeof(request->value)+sizeof(request->type);
 
 }
 
@@ -111,7 +128,7 @@ int main(int argc,char* argv[]) {
 
     // confirma que esta tudo certo
 
-    /*
+    
     printf("REQUEST TYPE : %d\n", request.type);
     printf("REQUEST LENGTH : %d\n", request.length);
     printf("REQUEST VALUE : \n");
@@ -137,10 +154,10 @@ int main(int argc,char* argv[]) {
         printf("TRANSFER ID : %d\n", request.value.transfer.account_id);
         printf("TRANFER BALANCE : %d\n", request.value.transfer.amount);
     }
-    */
+    
 
 
-
+    /*
    //Create a fifo to receive information
 
 
@@ -153,7 +170,7 @@ int main(int argc,char* argv[]) {
    strcat(fifo_name,a);
 
    printf("%s\n",fifo_name);
-   
+    */
 
 
 
