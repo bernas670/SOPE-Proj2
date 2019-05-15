@@ -6,7 +6,7 @@
 
 
 typedef struct request_queue {
-    tlv_request_t **requests;   /**< Queue elements */
+    tlv_request_t *requests;    /**< Queue elements */
     unsigned int in;            /**< In index for the array */
     unsigned int out;           /**< Out index for the array */
     unsigned int size;          /**< Maximum size of the queue */
@@ -33,18 +33,18 @@ void delete_request_queue(request_queue_t *q);
  *        on the queue if the queue is not full
  * 
  * @param queue     Pointer to the queue to which the request will be pushed
- * @param request   Pointer to the request which will be put on queue
+ * @param request   Request which will be put on queue
  * @return int      Returns 0 if the push is successful, 1 otherwise
  */
-int push(request_queue_t *q, tlv_request_t *request);
+int push(request_queue_t *q, tlv_request_t request);
 
 /**
  * @brief Pop the pointer to request that is at the head of the queue
  * 
  * @param q                 Pointer to the queue
- * @return tlv_request_t*   Returns a pointer to a request if successful, NULL in case of error
+ * @return tlv_request_t*   Returns a request if successful, NULL in case of error
  */
-tlv_request_t *pop(request_queue_t *q);
+tlv_request_t pop(request_queue_t *q);
 
 /**
  * @brief Checks if the specified queue is empty or not
@@ -68,6 +68,6 @@ int is_full(request_queue_t *q);
  * @param q     Pointer to the queue that will be analised
  * @return int  Returns the number of elements of the queue
  */
-int num_elements(request_queue_t * q);
+int num_elements(request_queue_t *q);
 
 #endif

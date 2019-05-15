@@ -41,7 +41,7 @@ void delete_request_queue(request_queue_t *q) {
     free(q);
 }
 
-int push(request_queue_t *q, tlv_request_t *request) {
+int push(request_queue_t *q, tlv_request_t request) {
     if (q->counter == q->size) {
         return 1;
     }
@@ -55,12 +55,13 @@ int push(request_queue_t *q, tlv_request_t *request) {
     return 0;
 }
 
-tlv_request_t *pop(request_queue_t *q) {
+tlv_request_t pop(request_queue_t *q) {
+    /*
     if (is_empty(q)) {
-        return NULL;
+        return;         
     }
-
-    tlv_request_t *r = q->requests[q->out];
+    */
+    tlv_request_t r = q->requests[q->out];
     q->out++;
     q->counter--;
 
