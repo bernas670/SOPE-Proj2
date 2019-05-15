@@ -132,7 +132,6 @@ void *office_main(void *args) {
         }
 
         write(user_fifo_fd, &reply, sizeof(tlv_reply_t));   // TODO: deal with errors
-
         
     }
 
