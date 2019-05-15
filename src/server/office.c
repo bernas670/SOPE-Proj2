@@ -1,4 +1,7 @@
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "office.h"
 #include "../sope.h"
@@ -41,7 +44,7 @@ void *office_main(void *args) {
 
         switch (request.type) {
 
-            case OP_CREATE_ACCOUNT:
+            case OP_CREATE_ACCOUNT:     // TODO: apply delay and log the delay
 
                 /* check if the admin was the one to request the creation */
                 if (request.value.header.account_id) {
@@ -59,7 +62,11 @@ void *office_main(void *args) {
                     reply.value.header.account_id = request.value.header.account_id;
                 }
                 /* create the account */
-                else {  // TODO: log account creation
+                else {
+                    pthread_mutex_init(&actual_args->account_mutex[request.value.create.account_id], NULL); // TODO: deal with errors
+
+                    pthread_mutex_lock(&actual_args->account_mutex[request.value.create.account_id]);       // TODO: log action
+
                     bank_account_t new_account;
                     new_account.account_id = request.value.create.account_id;
                     new_account.balance =  request.value.create.balance;
@@ -71,11 +78,13 @@ void *office_main(void *args) {
                     strcpy(new_account.hash, hash);
 
                     actual_args->accounts[new_account.account_id] = new_account;
-                    pthread_mutex_init(&actual_args->account_mutex[new_account.account_id], NULL);  // TODO: log this action
 
                     reply.value.header.account_id = new_account.account_id;
+                    reply.value.header.ret_code = RC_OK;
 
                     logAccountCreation(actual_args->log_fd, actual_args->id, &new_account);
+
+                    pthread_mutex_unlock(&actual_args->account_mutex[request.value.create.account_id]);     // TODO: log action
                 }
 
                 reply.type = request.type;
@@ -109,6 +118,22 @@ void *office_main(void *args) {
                 break;
         }
 
+        logReply(actual_args->log_fd, actual_args->id, &reply);     // TODO: deal with errors
+
+        /* Get the user FIFO to send the reply */
+        char user_fifo[20];
+        sprintf(user_fifo, "%s%d", USER_FIFO_PATH_PREFIX, request.value.header.pid);
+
+        int user_fifo_fd = open(user_fifo, O_WRONLY | O_APPEND | O_NONBLOCK);       // TODO: deal with errors (errno is set accordingly)
+
+        if (user_fifo < 0) {
+            printf("Not able to find fifo!\n");
+            continue;
+        }
+
+        write(user_fifo_fd, &reply, sizeof(tlv_reply_t));   // TODO: deal with errors
+
+        
     }
 
 

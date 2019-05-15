@@ -172,7 +172,7 @@ int main(int argc, char* argv[]) {
 
 
     /* Wait for all requests in the queue to be processed */
-    for (int i = 0; i < num_offices; i++) {
+    for (int i = 1; i <= num_offices; i++) {
         pthread_join(threads[i], NULL);
     }
 

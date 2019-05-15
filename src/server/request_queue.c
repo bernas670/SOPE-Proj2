@@ -55,7 +55,7 @@ int push(request_queue_t *q, tlv_request_t request) {
     return 0;
 }
 
-tlv_request_t pop(request_queue_t *q) {
+tlv_request_t pop(request_queue_t *q) { // TODO: check what happens in case of error
     /*
     if (is_empty(q)) {
         return;         
