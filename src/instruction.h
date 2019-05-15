@@ -24,7 +24,16 @@ void set_operation(instruction *ptr, int i_operation);
 bool get_flag(instruction *ptr);
 void set_flag(instruction *ptr, bool i_flag);
 
-char *get_args(instruction *ptr);
-void set_args(instruction *ptr, char *i_args);
+char *get_arg1(instruction *ptr);
+void set_arg1(instruction *ptr, char *i_args);
+
+char *get_arg2(instruction *ptr);
+void set_arg2(instruction *ptr, char *i_args);
+
+char *get_arg3(instruction *ptr);
+void set_arg3(instruction *ptr, char *i_args);
+
+int getPid(instruction *ptr);
+
 
 #endif

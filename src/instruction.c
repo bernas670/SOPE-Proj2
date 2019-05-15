@@ -12,7 +12,9 @@ struct st_instruction{
     int latency;
     int operation;
     bool has_args;
-    char* args;
+    char* arg1;
+    char* arg2;
+    char* arg3;
 };
 
 instruction* create_instruction(){
@@ -72,9 +74,27 @@ void set_flag(instruction *ptr, bool i_flag){
     ptr->has_args = i_flag;
 }
 
-char *get_args(instruction *ptr){
-    return ptr->args;
+char *get_arg1(instruction *ptr){
+    return ptr->arg1;
 }
-void set_args(instruction *ptr, char *i_args){
-    ptr->args = i_args;
+void set_arg1(instruction *ptr, char *i_args){
+    ptr->arg1 = i_args;
+}
+
+char *get_arg2(instruction *ptr){
+    return ptr->arg2;
+}
+void set_arg2(instruction *ptr, char *i_args){
+    ptr->arg2 = i_args;
+}
+
+char *get_arg3(instruction *ptr){
+    return ptr->arg3;
+}
+void set_arg3(instruction *ptr, char *i_args){
+    ptr->arg3 = i_args;
+}
+
+int getPid(instruction *ptr){
+    return ptr->pid;
 }
