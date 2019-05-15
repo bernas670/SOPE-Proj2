@@ -32,8 +32,8 @@ void create_request(instruction *data, tlv_request_t *request){
         break;
     } 
 
-    /* FALTA O CODIGO DO LENGTH */
-    request->length = 192;
+    
+
 
     // para o value
     req_header_t header;
@@ -80,6 +80,8 @@ void create_request(instruction *data, tlv_request_t *request){
 
     request->value = value;
 
+    request->length = sizeof(request->value)+sizeof(request->type);
+
 }
 
 
@@ -88,6 +90,7 @@ void create_request(instruction *data, tlv_request_t *request){
 int main(int argc,char* argv[]) {
 
     // retira a instrucao da shell
+
     data = create_instruction();
 
     if(get_arguments(argc, argv, data) == -1){
@@ -96,12 +99,13 @@ int main(int argc,char* argv[]) {
 
 
     // cria a struct de request
-    tlv_request_t request;
 
+    tlv_request_t request;
     create_request(data, &request);
     
 
     // confirma que esta tudo certo
+
     printf("REQUEST TYPE : %d\n", request.type);
     printf("REQUEST LENGTH : %d\n", request.length);
     printf("REQUEST VALUE : \n");
