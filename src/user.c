@@ -128,7 +128,7 @@ int main(int argc,char* argv[]) {
 
     // confirma que esta tudo certo
 
-    
+    /*
     printf("REQUEST TYPE : %d\n", request.type);
     printf("REQUEST LENGTH : %d\n", request.length);
     printf("REQUEST VALUE : \n");
@@ -154,35 +154,51 @@ int main(int argc,char* argv[]) {
         printf("TRANSFER ID : %d\n", request.value.transfer.account_id);
         printf("TRANFER BALANCE : %d\n", request.value.transfer.amount);
     }
-    
-
-
-    /*
-   //Create a fifo to receive information
-
-
-   char* fifo_name;
-   strcpy(fifo_name, "/tmp/secure_");
-   char a[256];
-   int num=getPid(data);
-   sprintf(a,"%d",num);
-
-   strcat(fifo_name,a);
-
-   printf("%s\n",fifo_name);
     */
 
 
 
-    
-    //send information to the server
-    
-/*
-    int fd;
-    fd=open(SERVER_FIFO_PATH, O_WRONLY|O_APPEND);
-    write(fd, &request, sizeof(request));
+    // creating ulog.txt
 
-*/
+    FILE* file_creator = fopen("ulog.txt", O_RDWR | O_APPEND);
+    logRequest(file_creator, getPid(data), request);
     
+
+
+
+
+    // Create a fifo to receive information
+
+    // naming the fifo
+    char fifo_name[25];
+    strcpy(fifo_name, "/tmp/secure_");
+    char a[256];
+    int num = getPid(data);
+    sprintf(a,"%d",num);
+
+    strcat(fifo_name,a);
+
+    printf("%s\n",fifo_name);
+    
+    // creating the fifo
+    mkfifo(fifo_name, 0666);
+    int fd1 = open(fifo_name, O_RDONLY | O_NONBLOCK);
+
+
+    //sending information to the server
+    
+    /*
+    int fd2;
+    fd2 = open(SERVER_FIFO_PATH, O_WRONLY|O_APPEND);
+    write(fd2, &request, sizeof(request));
+    */
+    
+    
+   // ciclo while que tem de durar 30 segundos para estar a epsera da resposta
+   // se passarem 30 segundos e nao houver respostas ele termina com o erro RC_SRV_TIMEOUT
+   // dentro do ciclo tenta-se ler do fifo
+   // se conseguir usa a funcao logReply, retorna reply.header.ret_code e dá break;
+    
+
     return 0;
 }
