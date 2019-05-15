@@ -78,8 +78,12 @@ int main(int argc, char* argv[]) {
         printf("Could not create a queue for the requests! \n");
         return 1;
     }
-    pthread_mutex_t queue_mutex;
-    pthread_mutex_init(&queue_mutex, NULL);                         // TODO: deal with errors
+    pthread_mutex_t queue_lock;
+    pthread_mutex_init(&queue_lock, NULL);                         // TODO: deal with errors
+
+    pthread_cond_t empty_cond, full_cond;
+    pthread_cond_init(&empty_cond, NULL);
+    pthread_cond_init(&full_cond, NULL);
     /* Queue is created and ready for use */
 
 
@@ -93,52 +97,69 @@ int main(int argc, char* argv[]) {
         args->log_fd = logfile_fd;
         args->id = i;
         args->shutdown = &shutdown;
+        args->accounts = accounts;
+        args->account_mutex = account_mutex;
         args->queue = queue;
-        args->queue_mutex = &queue_mutex;
+        args->queue_lock = &queue_lock;
+        args->empty_cond = &empty_cond;
+        args->full_cond = &full_cond;
 
         pthread_create(&threads[i], NULL, office_main, args);       // TODO: deal with errors
+        printf("Created thread %d\n", i);
     }
     /* All counters are created */
 
 
     /* Create and open FIFO */
     mkfifo(SERVER_FIFO_PATH, 0666);                                 // TODO: deal with errors
+    printf("Created server FIFO\n");
     int request_fd = open(SERVER_FIFO_PATH, O_RDONLY);              // TODO: deal with errors
+    int fifo_open = 1;
     /* FIFO is created and open */
 
 
     /* Loop for the server to receive messages
        If the server is ordered to shutdown this loop will end */
     int request_size = sizeof(tlv_request_t);
-    char request_buf[request_size];
+    tlv_request_t request_buf;
+    int fifo_eof = 0;
     
-    while (!shutdown) {
-        if (is_full(queue)) {
-            continue;
+    while (!shutdown || !fifo_eof) {
+
+        if (shutdown && fifo_open) {
+            close(request_fd);
+            fifo_open = 0;
         }
 
-        if (read(request_fd, request_buf, request_size) > 0) {     // TODO: deal with errors
-            tlv_request_t *request = (tlv_request_t *) (uintptr_t) atoi(request_buf);       // TODO: ask teacher
+        pthread_mutex_lock(&queue_lock);
+        while(is_full(queue)) {
+            pthread_cond_wait(&full_cond, &queue_lock);
+        }
+        pthread_mutex_unlock(&queue_lock);
+
+        fifo_eof = read(request_fd, &request_buf, request_size);
+
+        if (fifo_eof > 0) {     // TODO: deal with errors
             
-            pthread_mutex_lock(&queue_mutex);
-            if (logSyncMech(logfile_fd, MAIN_THREAD_ID, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_PRODUCER, request->value.header.pid) < 0) {
+            pthread_mutex_lock(&queue_lock);
+            if (logSyncMech(logfile_fd, MAIN_THREAD_ID, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_PRODUCER, request_buf.value.header.pid) < 0) {
                 printf("Error writing to logfile! \n");
             }
             
-            if (push(queue, request)) {
+            if (push(queue, request_buf)) {
                 printf("Could not add request to queue, queue is full! \n");
             }
+            pthread_cond_signal(&empty_cond);
 
-            pthread_mutex_unlock(&queue_mutex);
-            if (logSyncMech(logfile_fd, MAIN_THREAD_ID, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_PRODUCER, request->value.header.pid) < 0) {
+            pthread_mutex_unlock(&queue_lock);
+            if (logSyncMech(logfile_fd, MAIN_THREAD_ID, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_PRODUCER, request_buf.value.header.pid) < 0) {
                 printf("Error writing to logfile! \n");
             }
-        }
+        } 
     }
 
 
     /* Close and request FIFO from systme because the shutdown command was received */
-    close(request_fd);
     remove(SERVER_FIFO_PATH);
 
 
@@ -146,6 +167,7 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < num_offices; i++) {
         pthread_join(threads[i], NULL);
     }
+
 
     /* Close the server's logfile */
     close(logfile_fd);

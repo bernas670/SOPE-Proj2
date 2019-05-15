@@ -12,8 +12,12 @@ typedef struct office_args {
     int id;
     int log_fd;
     int* shutdown;
+    bank_account_t *accounts;
+    pthread_mutex_t *account_mutex;
     request_queue_t *queue;
-    pthread_mutex_t *queue_mutex;
+    pthread_mutex_t *queue_lock;
+    pthread_cond_t *empty_cond;
+    pthread_cond_t *full_cond;
 } office_args_t;
 
 
