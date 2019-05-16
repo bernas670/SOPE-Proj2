@@ -65,6 +65,11 @@ int arg_split(instruction *data, char* args, int opt){
 
 int get_arguments(int argc, char* argv[],instruction *data){
 
+    if(argc != 6){
+        printf("invalid arguments\n");
+        return -1;
+    }
+
     //process id
     
     // falta testar se é valido

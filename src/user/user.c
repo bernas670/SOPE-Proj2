@@ -137,8 +137,6 @@ int main(int argc,char* argv[]) {
     logRequest(file_creator, getPid(data), &request);
     logRequest(STDOUT_FILENO, getPid(data), &request);
 
-    
-
 
 
     // Create a fifo to receive information
@@ -162,6 +160,7 @@ int main(int argc,char* argv[]) {
     fd2 = open(SERVER_FIFO_PATH, O_WRONLY|O_APPEND);
 
     if(write(fd2, &request, sizeof(request)) < 0){
+            printf("ERROR : server down\n");
             return RC_SRV_DOWN;
     }
     
@@ -185,7 +184,6 @@ int main(int argc,char* argv[]) {
 
     while(time(NULL) <= endwait){
         
-
         if(time(NULL) == endwait){
             return_value = RC_SRV_TIMEOUT;
         }
