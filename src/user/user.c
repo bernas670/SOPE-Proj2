@@ -116,7 +116,9 @@ int main(int argc,char* argv[]) {
     data = create_instruction();
 
     if(get_arguments(argc, argv, data) == -1){
-        return -1;
+        printf("Can not extract arguments");
+
+        return RC_OTHER;
     }
 
 
@@ -193,5 +195,7 @@ int main(int argc,char* argv[]) {
         }      
     }  
 
-    return 0;
+
+    return RC_OK;
+
 }
