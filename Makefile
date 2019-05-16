@@ -1,30 +1,46 @@
-# Declaration of variables
 CC = gcc
-CFLAGS = -g -Wall -Wextra -Wunused -pthread -lrt
- 
-# Directory names
-SOURCE_DIR = src
-SERVER_DIR = src/server
-BUILD_DIR = build
+CFLAGS = -Wall -Wextra -pthread #-Werror #-pedantic
+ODIR = build
 
-# File names
-EXEC = server
-SOURCES = $(wildcard $(SOURCE_DIR)/*.c $(SERVER_DIR)/*.c)
-OBJECTS =  $(patsubst $(SOURCE_DIR)/%.c,$(BUILD_DIR)/%.o,$(SOURCES))
+SRC_SHARED = src
+SRC_SERVER = src/server
+SRC_USER = src/user
 
-dir_guard = @mkdir -p $(BUILD_DIR)
- 
-# Main target
-$(EXEC): $(OBJECTS)
-	$(dir_guard)
-	$(CC) $(SOURCES) -o $(EXEC)
- 
-# To obtain object files
-$(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.c
-	$(dir_guard)
-	$(CC) -c $(CFLAGS) $< -o $@
+TARGET_SERVER = server
+TARGET_USER = user
 
-# To remove generated files
+OBJS_SERVER = $(ODIR)/server.o $(ODIR)/request_queue.o $(ODIR)/log.o  $(ODIR)/office.o $(ODIR)/operations.o
+OBJS_USER = $(ODIR)/args.o $(ODIR)/user.o $(ODIR)/log.o $(ODIR)/instruction.o
+
+
+.PHONY: all clean
+
+all: $(TARGET_SERVER) $(TARGET_USER)
+
+$(TARGET_SERVER) : $(OBJS_SERVER)
+	$(CC) $(CFLAGS) -o $(TARGET_SERVER) $(OBJS_SERVER)
+
+$(TARGET_USER) : $(OBJS_USER)
+	$(CC) $(CFLAGS) -o $(TARGET_USER) $(OBJS_USER)
+
+
+ifdef DEV_INFO
+DEV_FLAGS = -save-temps
+endif
+
+
+$(ODIR)/%.o: $(SRC_SHARED)/%.c
+	$(CC) $(CFLAGS) $(DEV_FLAGS) -MMD -c $< -o $@
+
+$(ODIR)/%.o: $(SRC_SERVER)/%.c
+	$(CC) $(CFLAGS) $(DEV_FLAGS) -MMD -c $< -o $@
+
+$(ODIR)/%.o: $(SRC_USER)/%.c
+	$(CC) $(CFLAGS) $(DEV_FLAGS) -MMD -c $< -o $@
+
+
 clean:
-	rm -f $(EXEC) $(OBJECTS)
-	rmdir $(BUILD_DIR)
+	rm -f $(TARGET_SERVER) $(ODIR)/*.o $(ODIR)/*.d $(ODIR)/*.i $(ODIR)/*.s *.txt
+	rm -f $(TARGET_USER) $(ODIR)/*.o $(ODIR)/*.d $(ODIR)/*.i $(ODIR)/*.s *.txt
+
+-include $(TARGET:=.d)
