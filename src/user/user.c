@@ -19,41 +19,27 @@ void create_request(instruction *data, tlv_request_t *request){
     {
     case 0:
         request->type = OP_CREATE_ACCOUNT;
+        request->length = sizeof(req_create_account_t);
         break;
 
     case 1:
         request->type = OP_BALANCE;
+        request->length = 0;
         break;
 
     case 2:
         request->type = OP_TRANSFER;
+        request->length = sizeof(req_transfer_t);
         break;
 
     case 3:
         request->type = OP_SHUTDOWN;
+        request->length = 0;
         break;
     
     default:
         break;
     }
-
-    switch (request->type) {
-        case OP_CREATE_ACCOUNT: 
-            request->length = sizeof(req_create_account_t);
-            break;
-        case OP_BALANCE:
-            request->length = 0;
-            break;
-        case OP_TRANSFER:
-            request->length = sizeof(req_transfer_t);
-            break;
-        case OP_SHUTDOWN:
-            request->length = 0;
-            break;
-        default:
-            printf("error in length\n");
-    }
-
     
 
 
@@ -83,12 +69,6 @@ void create_request(instruction *data, tlv_request_t *request){
         create.balance = (uint32_t) atoi(get_arg2(data));
 
         strcpy(create.password, get_arg3(data));
-        /*
-        for(size_t i = 0; i < strlen(get_arg3(data)); i++){
-            create.password[i]=(get_arg3(data))[i];
-        }
-        */
-
         value.create = create;
         break;
 
@@ -104,9 +84,6 @@ void create_request(instruction *data, tlv_request_t *request){
     }
 
     request->value = value;
-
-    // request->length = sizeof(request->value)+sizeof(request->type);
-
 }
 
 
