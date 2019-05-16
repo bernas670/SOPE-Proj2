@@ -109,14 +109,17 @@ int main(int argc, char* argv[]) {
         args->full_cond = &full_cond;
 
         pthread_create(&threads[i], NULL, office_main, args);       // TODO: deal with errors
-        printf("Created thread %d\n", i);
+
+        /* Log the openning of the office to the server logfile */
+        if (logBankOfficeOpen(logfile_fd, i, threads[i]) < 0) {
+            printf("Error logging bank opening!\n");
+        }
     }
     /* All counters are created */
 
 
     /* Create and open FIFO */
     mkfifo(SERVER_FIFO_PATH, 0666);                                 // TODO: deal with errors
-    printf("Created server FIFO\n");
     int request_fd = open(SERVER_FIFO_PATH, O_RDONLY | O_NONBLOCK); // TODO: deal with errors
     int fifo_open = 1;
     /* FIFO is created and open */
@@ -133,19 +136,24 @@ int main(int argc, char* argv[]) {
         if (shutdown && fifo_open) {
             fifo_open = 0;
             chmod(SERVER_FIFO_PATH, 0444);  // TODO: deal with errors
-            printf("Server is in shutdown mode!\n");
+            printf("S - Server entered shutdown mode!\n");
         }
 
+        printf("S - Locking queue to check if it's full\n");
         pthread_mutex_lock(&queue_lock);
+        printf("S - Checking if queue is full\n");
         while(is_full(queue)) {
             pthread_cond_wait(&full_cond, &queue_lock);
         }
+        printf("S - Unlocking queue\n");
         pthread_mutex_unlock(&queue_lock);
+
+        //printf("S - Waiting for a request...\n");
 
         fifo_eof = read(request_fd, &request_buf, request_size);
 
         if (fifo_eof > 0) {     // TODO: deal with errors
-            printf("Got a request!\n");
+            printf("S - Got a request!\n");
 
             
             pthread_mutex_lock(&queue_lock);
@@ -153,15 +161,20 @@ int main(int argc, char* argv[]) {
                 printf("Error writing to logfile! \n");
             }
             
+            printf("S - Going to add a request to the queue\n");
             if (push(queue, request_buf)) {
                 printf("Could not add request to queue, queue is full! \n");
             }
+            printf("S - Added a request to the queue\n");
             pthread_cond_signal(&empty_cond);
 
+            printf("S - Going to unlock the queue\n");
             pthread_mutex_unlock(&queue_lock);
             if (logSyncMech(logfile_fd, MAIN_THREAD_ID, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_PRODUCER, request_buf.value.header.pid) < 0) {
                 printf("Error writing to logfile! \n");
             }
+
+            printf("S - Going to start looking for a new request!\n");
         } 
     }
 
@@ -174,6 +187,11 @@ int main(int argc, char* argv[]) {
     /* Wait for all requests in the queue to be processed */
     for (int i = 1; i <= num_offices; i++) {
         pthread_join(threads[i], NULL);
+
+        /* Log the closure of the office to the server logfile */
+        if (logBankOfficeClose(logfile_fd, i, threads[i]) < 0) {
+            printf("Error writing to logfile!\n");
+        } 
     }
 
 

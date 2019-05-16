@@ -12,30 +12,37 @@
 void *office_main(void *args) {
     office_args_t *actual_args = args;
 
-
-    /* Log the openning of the office to the server logfile */
-    if (logBankOfficeOpen(actual_args->log_fd, actual_args->id, pthread_self()) < 0) {
-        printf("Error logging bank opening!\n");
-    }
-
+    /*
+    char buf[3];
+    sprintf(buf, "%d\n", actual_args->id);
+    write(actual_args->log_fd, buf, strlen(buf));
+    */
 
     /* The thread will keep looking for new requests, as long as the
        server is live or the request queue is not empty */
     while(true) {
 
+        printf("O - Going to lock the queue\n");
         pthread_mutex_lock(actual_args->queue_lock);        // TODO: log the action
+        printf("O - Locked the queue\n");
         /* Exit condition for the thread */
         if (*actual_args->shutdown && is_empty(actual_args->queue)) {
             pthread_mutex_unlock(actual_args->queue_lock);      // TODO: log this action
+            printf("O - Shutting down office\n");
             break;
         }
+        printf("O - Checking if the queue is empty\n");
         while(is_empty(actual_args->queue)) {
+            printf("O - Queue is empty");
+            //write(actual_args->log_fd, "O - Queue is empty", 19);
             pthread_cond_wait(actual_args->empty_cond, actual_args->queue_lock);    // TODO: log the action
         }
+        printf("O - Going to unlock the queue\n");
         pthread_mutex_unlock(actual_args->queue_lock);      // TODO: log this action
 
         tlv_request_t request;
 
+        printf("O - Locked the queue to get a request\n");
         pthread_mutex_lock(actual_args->queue_lock);
         if (logSyncMech(actual_args->log_fd, actual_args->id, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_CONSUMER, request.value.header.pid) < 0) {
                 printf("Error writing to logfile! \n");
@@ -43,6 +50,10 @@ void *office_main(void *args) {
 
         request = pop(actual_args->queue);
         pthread_cond_signal(actual_args->full_cond);        // TODO: log this action
+
+        pthread_mutex_unlock(actual_args->queue_lock);      // TODO: log this action
+
+        printf("O - Started processing a request!\n");
 
         *actual_args->active_threads++;
 
@@ -109,7 +120,7 @@ void *office_main(void *args) {
                 reply.value.balance.balance = 0;
                 
                 /* check if the account id is valid */
-                if (actual_args->accounts[request.value.header.account_id].account_id == ERROR_ACCOUNT_ID) {
+                if (actual_args->accounts[request.value.header.account_id].account_id != ERROR_ACCOUNT_ID) {
                     reply.value.header.ret_code = RC_ID_NOT_FOUND;
                 }
                 /* check if it is not the admin account */
@@ -147,7 +158,7 @@ void *office_main(void *args) {
                     reply.value.header.ret_code = RC_SAME_ID;
                 }
                 /* check if the origin account is valid */
-                else if (actual_args->accounts[request.value.header.account_id].account_id == ERROR_ACCOUNT_ID) {
+                else if (actual_args->accounts[request.value.header.account_id].account_id != ERROR_ACCOUNT_ID) {
                     reply.value.header.ret_code = RC_ID_NOT_FOUND;
                 }
                 /* check if the destination account is valid */
@@ -261,15 +272,9 @@ void *office_main(void *args) {
 
         logReply(actual_args->log_fd, actual_args->id, &reply);     // TODO: deal with errors
 
+        printf("O - Finished processing a request!\n");
         *actual_args->active_threads--;
-    }
-
-
-    /* Log the closure of the office to the server logfile */
-    if (logBankOfficeClose(actual_args->log_fd, actual_args->id, pthread_self()) < 0) {
-        printf("Error writing to logfile!\n");
     }    
-    
 
     free(actual_args);
 
