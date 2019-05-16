@@ -69,12 +69,6 @@ void create_request(instruction *data, tlv_request_t *request){
         create.balance = (uint32_t) atoi(get_arg2(data));
 
         strcpy(create.password, get_arg3(data));
-        /*
-        for(size_t i = 0; i < strlen(get_arg3(data)); i++){
-            create.password[i]=(get_arg3(data))[i];
-        }
-        */
-
         value.create = create;
         break;
 
@@ -90,9 +84,6 @@ void create_request(instruction *data, tlv_request_t *request){
     }
 
     request->value = value;
-
-    // request->length = sizeof(request->value)+sizeof(request->type);
-
 }
 
 
