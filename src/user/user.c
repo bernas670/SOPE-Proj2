@@ -8,6 +8,7 @@
 
 #include "args.h"
 #include "../types.h"
+#include "../sope.h"
 
 
 instruction *data;
@@ -121,56 +122,15 @@ int main(int argc,char* argv[]) {
 
 
     // cria a struct de request
-
     tlv_request_t request;
     create_request(data, &request);
-    
-
-
-
-
-    // confirma que esta tudo certo
-
-    /*
-    printf("REQUEST TYPE : %d\n", request.type);
-    printf("REQUEST LENGTH : %d\n", request.length);
-    printf("REQUEST VALUE : \n");
-    printf("VALUE HEADER : \n");
-    printf("HEADER PID : %d\n", request.value.header.pid);
-    printf("HEADER ACCOUNT_ID : %d\n", request.value.header.account_id);
-    printf("HEADER PASSWORD : ");
-    for(unsigned int i = 0; i < strlen(request.value.header.password); i++){
-        printf("%c", request.value.header.password[i]);
-    }
-    printf("\n");
-    printf("HEADER DELAY : %d\n", request.value.header.op_delay_ms);
-    if(request.type == 0){
-        printf("CREATE ID : %d\n", request.value.create.account_id);
-        printf("CREATE BALANCE : %d\n", request.value.create.balance);
-        printf("CREATE PASS : ");
-        for(unsigned int i = 0; i < strlen(request.value.create.password); i++){
-            printf("%c", request.value.create.password[i]);
-        }
-        printf("\n");
-    }
-    if(request.type == 2){
-        printf("TRANSFER ID : %d\n", request.value.transfer.account_id);
-        printf("TRANFER BALANCE : %d\n", request.value.transfer.amount);
-    }
-    */
-
 
 
 
     // creating ulog.txt
-
-/*
-    FILE* file_creator = fopen("ulog.txt", O_RDWR | O_APPEND);
-    logRequest(file_creator, getPid(data), request);
+    int file_creator = open("ulog.txt", O_WRONLY|O_APPEND|O_CREAT, 0666);
+    logRequest(file_creator, getPid(data), &request);
     
-
-*/
-
 
 
 
@@ -195,15 +155,15 @@ int main(int argc,char* argv[]) {
 
 
     //sending information to the server
-    
-    /*
     int fd2;
     fd2 = open(SERVER_FIFO_PATH, O_WRONLY|O_APPEND);
-    write(fd2, &request, sizeof(request));
-    */
-    
-    
 
+    if(write(fd2, &request, sizeof(request)) < 0){
+            return RC_SRV_DOWN;
+    }
+    
+    
+    
 
    // ciclo while que tem de durar 30 segundos para estar à espera da resposta
    // se passarem 30 segundos e nao houver respostas ele termina com o erro RC_SRV_TIMEOUT
@@ -226,8 +186,8 @@ int main(int argc,char* argv[]) {
             return RC_SRV_TIMEOUT;
         }
         
-        if(read(fd1,&reply,sizeof(tlv_reply_t)) != -1){
-            logReply(fd1,getPid(data),reply);
+        if(read(fd1,&reply,sizeof(tlv_reply_t)) > 0){
+            logReply(fd1,getPid(data),&reply);
             return reply.value.header.ret_code;
             break;
         }      
