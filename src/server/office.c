@@ -14,9 +14,7 @@ void *office_main(void *args) {
 
 
     /* Log the openning of the office to the server logfile */
-    if (logBankOfficeOpen(actual_args->log_fd, actual_args->id, pthread_self())if (write(user_fifo_fd, &reply, sizeof(tlv_reply_t)) < 0) {   // TODO: deal with errors
-            reply.value.header.ret_code = RC_USR_DOWN;
-        } < 0) {
+    if (logBankOfficeOpen(actual_args->log_fd, actual_args->id, pthread_self())) {
         printf("Error writing to logfile!\n");
     }
 
@@ -101,8 +99,6 @@ void *office_main(void *args) {
                     pthread_mutex_unlock(&actual_args->account_mutex[request.value.create.account_id]);     // TODO: log action
                 }
 
-                
-                
                 break;
             
             case OP_BALANCE:        // TODO: implement delays and corresponding logs

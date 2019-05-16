@@ -68,7 +68,7 @@ void create_request(instruction *data, tlv_request_t *request){
 
     header.account_id = get_id(data);
     //check this with bernas
-    for(int i=0;i<strlen(get_password(data));i++){
+    for(size_t i = 0; i < strlen(get_password(data)); i++){
         header.password[i] = (get_password(data))[i];
     }
     header.op_delay_ms = get_latency(data);
@@ -82,7 +82,7 @@ void create_request(instruction *data, tlv_request_t *request){
         create.account_id = (uint32_t) atoi(get_arg1(data));
         create.balance = (uint32_t) atoi(get_arg2(data));
 
-        for(int i=0;i<strlen(get_arg3(data));i++){
+        for(size_t i = 0; i < strlen(get_arg3(data)); i++){
             create.password[i]=(get_arg3(data))[i];
         }
 
