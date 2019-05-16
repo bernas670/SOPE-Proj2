@@ -4,9 +4,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <time.h>
 
 #include "args.h"
-#include "types.h"
+#include "../types.h"
+#include "../sope.h"
 
 
 instruction *data;
@@ -114,75 +116,93 @@ int main(int argc,char* argv[]) {
     data = create_instruction();
 
     if(get_arguments(argc, argv, data) == -1){
-        return -1;
+        printf("Can not extract arguments");
+
+        return RC_OTHER;
     }
+
 
 
     // cria a struct de request
-
     tlv_request_t request;
     create_request(data, &request);
+
+
+
+    // creating ulog.txt
+    int file_creator = open("ulog.txt", O_WRONLY|O_APPEND|O_CREAT, 0666);
+    logRequest(file_creator, getPid(data), &request);
     
 
 
 
-    // confirma que esta tudo certo
+    // Create a fifo to receive information
 
+    // naming the fifo
+    char fifo_name[25];
+    strcpy(fifo_name, "/tmp/secure_");
+    char a[256];
+    int num = getPid(data);
+    sprintf(a,"%d",num);
+
+    strcat(fifo_name,a);
+
+    printf("%s\n",fifo_name);
     
-    printf("REQUEST TYPE : %d\n", request.type);
-    printf("REQUEST LENGTH : %d\n", request.length);
-    printf("REQUEST VALUE : \n");
-    printf("VALUE HEADER : \n");
-    printf("HEADER PID : %d\n", request.value.header.pid);
-    printf("HEADER ACCOUNT_ID : %d\n", request.value.header.account_id);
-    printf("HEADER PASSWORD : ");
-    for(unsigned int i = 0; i < strlen(request.value.header.password); i++){
-        printf("%c", request.value.header.password[i]);
+
+    // creating the fifo
+    mkfifo(fifo_name, 0666);
+    int fd1 = open(fifo_name, O_RDONLY | O_NONBLOCK);
+
+
+
+    //sending information to the server
+    int fd2;
+    fd2 = open(SERVER_FIFO_PATH, O_WRONLY|O_APPEND);
+
+    if(write(fd2, &request, sizeof(request)) < 0){
+            return RC_SRV_DOWN;
     }
-    printf("\n");
-    printf("HEADER DELAY : %d\n", request.value.header.op_delay_ms);
-    if(request.type == 0){
-        printf("CREATE ID : %d\n", request.value.create.account_id);
-        printf("CREATE BALANCE : %d\n", request.value.create.balance);
-        printf("CREATE PASS : ");
-        for(unsigned int i = 0; i < strlen(request.value.create.password); i++){
-            printf("%c", request.value.create.password[i]);
+    
+    
+    
+
+   // ciclo while que tem de durar 30 segundos para estar à espera da resposta
+   // se passarem 30 segundos e nao houver respostas ele termina com o erro RC_SRV_TIMEOUT
+   // dentro do ciclo tenta-se ler do fifo
+   // se conseguir usa a funcao logReply, retorna reply.header.ret_code e dá break;
+
+
+    time_t endwait;
+    int seconds=FIFO_TIMEOUT_SECS;
+
+    endwait= seconds + time(NULL);
+
+    tlv_reply_t reply; 
+
+
+   while(time(NULL) <= endwait){
+        
+
+        if(time(NULL) == endwait){
+            return RC_SRV_TIMEOUT;
         }
-        printf("\n");
-    }
-    if(request.type == 2){
-        printf("TRANSFER ID : %d\n", request.value.transfer.account_id);
-        printf("TRANFER BALANCE : %d\n", request.value.transfer.amount);
-    }
-    
-
-
-    /*
-   //Create a fifo to receive information
-
-
-   char* fifo_name;
-   strcpy(fifo_name, "/tmp/secure_");
-   char a[256];
-   int num=getPid(data);
-   sprintf(a,"%d",num);
-
-   strcat(fifo_name,a);
-
-   printf("%s\n",fifo_name);
-    */
+        
+        if(read(fd1,&reply,sizeof(tlv_reply_t)) > 0){
+            logReply(fd1,getPid(data),&reply);
+            return reply.value.header.ret_code;
+            break;
+        }      
+    }  
 
 
 
-    
-    //send information to the server
-    
-/*
-    int fd;
-    fd=open(SERVER_FIFO_PATH, O_WRONLY|O_APPEND);
-    write(fd, &request, sizeof(request));
+    close(file_creator);
+    close(fd1);
+    close(fd2);
+    remove(fifo_name);
 
-*/
-    
-    return 0;
+
+    return RC_OK;
+
 }

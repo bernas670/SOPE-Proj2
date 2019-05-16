@@ -4,7 +4,7 @@
 #include <ctype.h>
 
 #include "instruction.h"
-#include "constants.h"
+#include "../constants.h"
 
 int arg_split(instruction *data, char* args, int opt){
 
