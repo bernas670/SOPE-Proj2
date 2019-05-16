@@ -164,7 +164,7 @@ void *office_main(void *args) {
                     reply.value.header.ret_code = RC_SAME_ID;
                 }
                 /* check if the origin account is valid */
-                else if (actual_args->accounts[request.value.header.account_id].account_id != ERROR_ACCOUNT_ID) {
+                else if (actual_args->accounts[request.value.header.account_id].account_id == ERROR_ACCOUNT_ID) {
                     reply.value.header.ret_code = RC_ID_NOT_FOUND;
                 }
                 /* check if the destination account is valid */
