@@ -53,10 +53,14 @@ void create_request(instruction *data, tlv_request_t *request){
     header.pid = getPid(data);
 
     header.account_id = get_id(data);
+    
     //check this with bernas
+    strcpy(header.password, get_password(data));
+    /*
     for(size_t i = 0; i < strlen(get_password(data)); i++){
         header.password[i] = (get_password(data))[i];
     }
+    */
     header.op_delay_ms = get_latency(data);
 
     value.header = header;

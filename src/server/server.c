@@ -15,6 +15,9 @@
 #define HASH_ERROR 2
 
 
+//bank_account_t accounts[MAX_BANK_ACCOUNTS + 1];
+
+
 int main(int argc, char* argv[]) {
 
     if (argc != 3) {
@@ -98,11 +101,12 @@ int main(int argc, char* argv[]) {
     pthread_t threads[num_offices + 1];
     threads[MAIN_THREAD_ID] = pthread_self();
     int active_threads = 0;
+
     for (int i = 1; i <= num_offices; i++) {
 
         office_args_t *args = malloc(sizeof(office_args_t));
-        args->log_fd = logfile_fd;
         args->id = i;
+        args->log_fd = logfile_fd;
         args->shutdown = &shutdown;
         args->fifo_eof = &fifo_eof;
         args->active_threads = &active_threads;

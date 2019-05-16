@@ -9,6 +9,7 @@
 #include "operations.h"
 
 
+
 void *office_main(void *args) {
     office_args_t *actual_args = args;
 
@@ -286,10 +287,9 @@ void *office_main(void *args) {
 
         printf("O %d - Finished processing a request!\n", actual_args->id);
     }    
-
+    
     printf("O %d - Freeing memory\n", actual_args->id);
     free(actual_args);
-
-
+    
     pthread_exit(NULL);
 }
