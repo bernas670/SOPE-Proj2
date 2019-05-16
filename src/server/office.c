@@ -168,7 +168,7 @@ void *office_main(void *args) {
                     reply.value.header.ret_code = RC_ID_NOT_FOUND;
                 }
                 /* check if the destination account is valid */
-                else if (actual_args->accounts[request.value.transfer.account_id].account_id == request.value.transfer.account_id) {
+                else if (actual_args->accounts[request.value.transfer.account_id].account_id == ERROR_ACCOUNT_ID) {
                     reply.value.header.ret_code = RC_ID_NOT_FOUND;
                 }
                 /* check if the accounts are different */
