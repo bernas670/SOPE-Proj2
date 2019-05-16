@@ -127,7 +127,7 @@ void *office_main(void *args) {
                 reply.value.balance.balance = 0;
                 
                 /* check if the account id is valid */
-                if (actual_args->accounts[request.value.header.account_id].account_id != ERROR_ACCOUNT_ID) {
+                if (actual_args->accounts[request.value.header.account_id].account_id == ERROR_ACCOUNT_ID) {
                     reply.value.header.ret_code = RC_ID_NOT_FOUND;
                 }
                 /* check if it is not the admin account */
