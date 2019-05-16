@@ -82,9 +82,12 @@ void create_request(instruction *data, tlv_request_t *request){
         create.account_id = (uint32_t) atoi(get_arg1(data));
         create.balance = (uint32_t) atoi(get_arg2(data));
 
+        strcpy(create.password, get_arg3(data));
+        /*
         for(size_t i = 0; i < strlen(get_arg3(data)); i++){
             create.password[i]=(get_arg3(data))[i];
         }
+        */
 
         value.create = create;
         break;
@@ -132,6 +135,8 @@ int main(int argc,char* argv[]) {
     // creating ulog.txt
     int file_creator = open("ulog.txt", O_WRONLY|O_APPEND|O_CREAT, 0666);
     logRequest(file_creator, getPid(data), &request);
+    logRequest(STDOUT_FILENO, getPid(data), &request);
+
     
 
 
@@ -145,15 +150,11 @@ int main(int argc,char* argv[]) {
     int num = getPid(data);
     sprintf(a,"%d",num);
 
-    strcat(fifo_name,a);
-
-    printf("%s\n",fifo_name);
-    
+    strcat(fifo_name,a);    
 
     // creating the fifo
     mkfifo(fifo_name, 0666);
     int fd1 = open(fifo_name, O_RDONLY | O_NONBLOCK);
-
 
 
     //sending information to the server
@@ -180,29 +181,27 @@ int main(int argc,char* argv[]) {
 
     tlv_reply_t reply; 
 
+    ret_code_t return_value = RC_OTHER;
 
-   while(time(NULL) <= endwait){
+    while(time(NULL) <= endwait){
         
 
         if(time(NULL) == endwait){
-            return RC_SRV_TIMEOUT;
+            return_value = RC_SRV_TIMEOUT;
         }
         
         if(read(fd1,&reply,sizeof(tlv_reply_t)) > 0){
-            logReply(fd1,getPid(data),&reply);
-            return reply.value.header.ret_code;
+            logReply(file_creator, getPid(data), &reply);
+            logReply(STDOUT_FILENO, getPid(data), &reply);
+            return_value = reply.value.header.ret_code;
             break;
         }      
-    }  
-
-
+    }
 
     close(file_creator);
     close(fd1);
     close(fd2);
     remove(fifo_name);
 
-
-    return RC_OK;
-
+    return return_value;
 }

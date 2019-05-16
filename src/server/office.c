@@ -14,8 +14,8 @@ void *office_main(void *args) {
 
 
     /* Log the openning of the office to the server logfile */
-    if (logBankOfficeOpen(actual_args->log_fd, actual_args->id, pthread_self())) {
-        printf("Error writing to logfile!\n");
+    if (logBankOfficeOpen(actual_args->log_fd, actual_args->id, pthread_self()) < 0) {
+        printf("Error logging bank opening!\n");
     }
 
 
@@ -68,7 +68,7 @@ void *office_main(void *args) {
                     reply.value.header.ret_code = RC_LOGIN_FAIL;
                 }
                 /* check if the account id is not used */
-                else if (actual_args->accounts[request.value.create.account_id].account_id == ERROR_ACCOUNT_ID) {
+                else if (actual_args->accounts[request.value.create.account_id].account_id != ERROR_ACCOUNT_ID) {
                     reply.value.header.ret_code = RC_ID_IN_USE;
                 }
                 /* create the account */
@@ -212,7 +212,7 @@ void *office_main(void *args) {
 
                 break;
             
-            case OP_SHUTDOWN:
+            case OP_SHUTDOWN:       // FIXME: segmentation fault somewhere arround here
 
                 reply.type = request.type;
                 reply.length = sizeof(rep_shutdown_t);
@@ -229,6 +229,7 @@ void *office_main(void *args) {
                 }
                 /* order the shutdown */
                 else {
+                    
                     *actual_args->shutdown = 1;
                     reply.value.shutdown.active_offices = *actual_args->active_threads;
                     reply.value.header.ret_code = RC_OK;
@@ -253,6 +254,10 @@ void *office_main(void *args) {
             printf("Not able to find user fifo!\n");
             continue;
         }
+
+        write(user_fifo_fd, &reply, sizeof(tlv_reply_t));
+
+        close(user_fifo_fd);
 
         logReply(actual_args->log_fd, actual_args->id, &reply);     // TODO: deal with errors
 

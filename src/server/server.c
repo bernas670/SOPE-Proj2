@@ -36,8 +36,6 @@ int main(int argc, char* argv[]) {
         printf("Invalid password! Must have at least %d characters and a maximum of %d. \n", MIN_PASSWORD_LEN, MAX_PASSWORD_LEN);
         return ARGS_ERROR;
     }
-    char admin_password[MAX_PASSWORD_LEN + 1];
-    admin_password[MAX_PASSWORD_LEN] = '\0';
     /* Admin's password is valid */
 
     
@@ -56,7 +54,7 @@ int main(int argc, char* argv[]) {
     admin_account.balance = 0;
     generateSalt(&admin_account);
     char hash[HASH_LEN + 1];
-    if (generateHash(admin_password, &admin_account, hash)) {
+    if (generateHash(argv[2], &admin_account, hash)) {
         printf("Error generating admin hash! \n");
         return HASH_ERROR;
     }
@@ -98,7 +96,6 @@ int main(int argc, char* argv[]) {
     pthread_t threads[num_offices + 1];
     threads[MAIN_THREAD_ID] = MAIN_THREAD_ID;
     for (int i = 1; i <= num_offices; i++) {
-        threads[i] = i;
 
         office_args_t *args = malloc(sizeof(office_args_t));
         args->log_fd = logfile_fd;
@@ -136,6 +133,7 @@ int main(int argc, char* argv[]) {
         if (shutdown && fifo_open) {
             fifo_open = 0;
             chmod(SERVER_FIFO_PATH, 0444);  // TODO: deal with errors
+            printf("Server is in shutdown mode!\n");
         }
 
         pthread_mutex_lock(&queue_lock);
@@ -147,6 +145,8 @@ int main(int argc, char* argv[]) {
         fifo_eof = read(request_fd, &request_buf, request_size);
 
         if (fifo_eof > 0) {     // TODO: deal with errors
+            printf("Got a request!\n");
+
             
             pthread_mutex_lock(&queue_lock);
             if (logSyncMech(logfile_fd, MAIN_THREAD_ID, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_PRODUCER, request_buf.value.header.pid) < 0) {
