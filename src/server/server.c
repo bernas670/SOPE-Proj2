@@ -11,6 +11,8 @@
 #include "office.h"
 #include "request_queue.h"
 
+
+// TODO: change the exit codes in server
 #define ARGS_ERROR 1
 #define HASH_ERROR 2
 
@@ -31,7 +33,6 @@ int main(int argc, char* argv[]) {
 
 
     /* Check if the admin's password respects the desired conditions */
-    // TODO: check if this is the correct way of dealing with the password, account for the quotes or not?    
     if (strlen(argv[2]) < MIN_PASSWORD_LEN || strlen(argv[2]) > MAX_PASSWORD_LEN) {
         printf("Invalid password! Must have at least %d characters and a maximum of %d. \n", MIN_PASSWORD_LEN, MAX_PASSWORD_LEN);
         return ARGS_ERROR;
@@ -97,6 +98,7 @@ int main(int argc, char* argv[]) {
     /* Create counter threads */
     pthread_t threads[num_offices + 1];
     threads[MAIN_THREAD_ID] = MAIN_THREAD_ID;
+    unsigned int active_threads = 0;
     for (int i = 1; i <= num_offices; i++) {
         threads[i] = i;
 
@@ -112,14 +114,12 @@ int main(int argc, char* argv[]) {
         args->full_cond = &full_cond;
 
         pthread_create(&threads[i], NULL, office_main, args);       // TODO: deal with errors
-        printf("Created thread %d\n", i);
     }
     /* All counters are created */
 
 
     /* Create and open FIFO */
     mkfifo(SERVER_FIFO_PATH, 0666);                                 // TODO: deal with errors
-    printf("Created server FIFO\n");
     int request_fd = open(SERVER_FIFO_PATH, O_RDONLY | O_NONBLOCK); // TODO: deal with errors
     int fifo_open = 1;
     /* FIFO is created and open */

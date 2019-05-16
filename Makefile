@@ -1,6 +1,6 @@
 # Declaration of variables
 CC = gcc
-CFLAGS = -g -Wall -Wextra -Wunused -pthread
+CFLAGS = -g -Wall -Wextra -Wunused -pthread -lrt
  
 # Directory names
 SOURCE_DIR = src

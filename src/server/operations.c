@@ -34,7 +34,7 @@ int generateHash(char* password, bank_account_t* account, char* hash) {
     fread(buf, 1, buf_size, filep);
     pclose(filep);
 
-    buf[strlen(HASH_LEN)] = '\0';
+    buf[HASH_LEN] = '\0';
     strcpy(hash, buf);
     return 0;      
 }
@@ -45,7 +45,7 @@ int authenticate(char* password, bank_account_t* account) {
     char hash[HASH_LEN + 1];
     generateHash(password, account, hash);
 
-    if (strmcp(hash, account->hash)) {
+    if (strcmp(hash, account->hash)) {
         return 0;
     }
 
