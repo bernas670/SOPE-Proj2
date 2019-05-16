@@ -27,15 +27,15 @@ void *office_main(void *args) {
         pthread_mutex_lock(actual_args->queue_lock);        // TODO: log the action
         printf("O %d - Locked the queue\n", actual_args->id);
         printf("O %d - Checking if the queue is empty\n", actual_args->id);
-        while(is_empty(actual_args->queue) && ((*actual_args->shutdown && *actual_args->fifo_eof > 0) || !*actual_args->shutdown)) {
+        while(is_empty(actual_args->queue) && !*actual_args->shutdown) {
             printf("O %d - Queue is empty\n", actual_args->id);
             //write(actual_args->log_fd, "O - Queue is empty", 19);
             pthread_cond_wait(actual_args->empty_cond, actual_args->queue_lock);    // TODO: log the action
         }
         printf("O %d - Broadcast received\n", actual_args->id);        
-        printf("O %d - shutdown : %d, empty : %d, eof : %d\n", actual_args->id, *actual_args->shutdown, is_empty(actual_args->queue), *actual_args->fifo_eof);
+        //printf("O %d - shutdown : %d, empty : %d, eof : %d\n", actual_args->id, *actual_args->shutdown, is_empty(actual_args->queue), *actual_args->fifo_eof);
         /* Exit condition for the thread */
-        if (*actual_args->shutdown && is_empty(actual_args->queue) && *actual_args->fifo_eof <= 0) {
+        if (*actual_args->shutdown && is_empty(actual_args->queue)) {
             pthread_mutex_unlock(actual_args->queue_lock);      // TODO: log this action
             printf("O %d - Shutting down office\n", actual_args->id);
             break;

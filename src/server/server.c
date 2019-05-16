@@ -72,9 +72,6 @@ int main(int argc, char* argv[]) {
     
     /* This variable is set to 1 by one of the threads when the admin orders the server's shutdown */
     int shutdown = 0;
-    /* This variable is set to 0 when the server's FIFO is empty */
-    int fifo_eof = 0;
-
 
 
     /* Open logfile for the server */
@@ -108,7 +105,6 @@ int main(int argc, char* argv[]) {
         args->id = i;
         args->log_fd = logfile_fd;
         args->shutdown = &shutdown;
-        args->fifo_eof = &fifo_eof;
         args->active_threads = &active_threads;
         args->accounts = accounts;
         args->account_mutex = account_mutex;
@@ -138,6 +134,7 @@ int main(int argc, char* argv[]) {
        If the server is ordered to shutdown this loop will end */
     int request_size = sizeof(tlv_request_t);
     tlv_request_t request_buf;
+    int fifo_eof = 0;
 
     
     while (!shutdown || !fifo_eof) {
