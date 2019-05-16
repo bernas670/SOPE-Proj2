@@ -4,9 +4,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <time.h>
 
 #include "args.h"
-#include "types.h"
+#include "../types.h"
 
 
 instruction *data;
@@ -118,11 +119,13 @@ int main(int argc,char* argv[]) {
     }
 
 
+
     // cria a struct de request
 
     tlv_request_t request;
     create_request(data, &request);
     
+
 
 
 
@@ -158,11 +161,15 @@ int main(int argc,char* argv[]) {
 
 
 
+
     // creating ulog.txt
 
+/*
     FILE* file_creator = fopen("ulog.txt", O_RDWR | O_APPEND);
     logRequest(file_creator, getPid(data), request);
     
+
+*/
 
 
 
@@ -180,9 +187,11 @@ int main(int argc,char* argv[]) {
 
     printf("%s\n",fifo_name);
     
+
     // creating the fifo
     mkfifo(fifo_name, 0666);
     int fd1 = open(fifo_name, O_RDONLY | O_NONBLOCK);
+
 
 
     //sending information to the server
@@ -194,11 +203,35 @@ int main(int argc,char* argv[]) {
     */
     
     
-   // ciclo while que tem de durar 30 segundos para estar a epsera da resposta
+
+
+   // ciclo while que tem de durar 30 segundos para estar à espera da resposta
    // se passarem 30 segundos e nao houver respostas ele termina com o erro RC_SRV_TIMEOUT
    // dentro do ciclo tenta-se ler do fifo
    // se conseguir usa a funcao logReply, retorna reply.header.ret_code e dá break;
-    
+
+
+    time_t endwait;
+    int seconds=FIFO_TIMEOUT_SECS;
+
+    endwait= seconds + time(NULL);
+
+    tlv_reply_t reply; 
+
+
+   while(time(NULL) <= endwait){
+        
+
+        if(time(NULL) == endwait){
+            return RC_SRV_TIMEOUT;
+        }
+        
+        if(read(fd1,&reply,sizeof(tlv_reply_t)) != -1){
+            logReply(fd1,getPid(data),reply);
+            return reply.value.header.ret_code;
+            break;
+        }      
+    }  
 
     return 0;
 }
