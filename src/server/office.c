@@ -22,40 +22,46 @@ void *office_main(void *args) {
        server is live or the request queue is not empty */
     while(true) {
 
-        printf("O - Going to lock the queue\n");
+        printf("O %d - Going to lock the queue\n", actual_args->id);
         pthread_mutex_lock(actual_args->queue_lock);        // TODO: log the action
-        printf("O - Locked the queue\n");
-        /* Exit condition for the thread */
-        if (*actual_args->shutdown && is_empty(actual_args->queue)) {
-            pthread_mutex_unlock(actual_args->queue_lock);      // TODO: log this action
-            printf("O - Shutting down office\n");
-            break;
-        }
-        printf("O - Checking if the queue is empty\n");
-        while(is_empty(actual_args->queue)) {
-            printf("O - Queue is empty");
+        printf("O %d - Locked the queue\n", actual_args->id);
+        printf("O %d - Checking if the queue is empty\n", actual_args->id);
+        while(is_empty(actual_args->queue) && ((*actual_args->shutdown && *actual_args->fifo_eof > 0) || !*actual_args->shutdown)) {
+            printf("O %d - Queue is empty\n", actual_args->id);
             //write(actual_args->log_fd, "O - Queue is empty", 19);
             pthread_cond_wait(actual_args->empty_cond, actual_args->queue_lock);    // TODO: log the action
         }
-        printf("O - Going to unlock the queue\n");
+        printf("O %d - Broadcast received\n", actual_args->id);        
+        printf("O %d - shutdown : %d, empty : %d, eof : %d\n", actual_args->id, *actual_args->shutdown, is_empty(actual_args->queue), *actual_args->fifo_eof);
+        /* Exit condition for the thread */
+        if (*actual_args->shutdown && is_empty(actual_args->queue) && *actual_args->fifo_eof <= 0) {
+            pthread_mutex_unlock(actual_args->queue_lock);      // TODO: log this action
+            printf("O %d - Shutting down office\n", actual_args->id);
+            break;
+        }
+        /*
+        printf("O %d - Going to unlock the queue\n", actual_args->id);
         pthread_mutex_unlock(actual_args->queue_lock);      // TODO: log this action
+        */
 
         tlv_request_t request;
 
-        printf("O - Locked the queue to get a request\n");
+        /*
+        printf("O %d - Locked the queue to get a request\n", actual_args->id);
         pthread_mutex_lock(actual_args->queue_lock);
         if (logSyncMech(actual_args->log_fd, actual_args->id, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_CONSUMER, request.value.header.pid) < 0) {
                 printf("Error writing to logfile! \n");
         }
+        */
 
         request = pop(actual_args->queue);
         pthread_cond_signal(actual_args->full_cond);        // TODO: log this action
 
         pthread_mutex_unlock(actual_args->queue_lock);      // TODO: log this action
 
-        printf("O - Started processing a request!\n");
+        printf("O %d - Started processing a request!\n", actual_args->id);
 
-        *actual_args->active_threads++;
+        *actual_args->active_threads = *actual_args->active_threads + 1;
 
         logRequest(actual_args->log_fd, actual_args->id, &request);     // TODO: deal with errors
 
@@ -133,7 +139,6 @@ void *office_main(void *args) {
                 }
                 /* get account balance */
                 else {
-                    // FIXME: is this really needed?
                     pthread_mutex_lock(&actual_args->account_mutex[request.value.header.account_id]);       // TODO: log this action
 
                     logSyncDelay(actual_args->log_fd, actual_args->id, request.value.header.account_id, request.value.header.op_delay_ms * 1000);
@@ -224,6 +229,7 @@ void *office_main(void *args) {
                 break;
             
             case OP_SHUTDOWN:       // FIXME: segmentation fault somewhere arround here
+                                    // TODO: add delay
 
                 reply.type = request.type;
                 reply.length = sizeof(rep_shutdown_t);
@@ -239,11 +245,16 @@ void *office_main(void *args) {
                     reply.value.header.ret_code = RC_LOGIN_FAIL;
                 }
                 /* order the shutdown */
-                else {
+                else {  
                     
+                    printf("O %d - Start building shutdown reply\n", actual_args->id);
                     *actual_args->shutdown = 1;
+                    printf("O %d - Shutdown flag is set\n", actual_args->id);
                     reply.value.shutdown.active_offices = *actual_args->active_threads;
+                    printf("O %d - Got the number of active threads\n", actual_args->id);
                     reply.value.header.ret_code = RC_OK;
+                    printf("O %d - Built shutdown reply\n", actual_args->id);
+
                 }
 
                 break;
@@ -271,11 +282,12 @@ void *office_main(void *args) {
         close(user_fifo_fd);
 
         logReply(actual_args->log_fd, actual_args->id, &reply);     // TODO: deal with errors
+        *actual_args->active_threads = *actual_args->active_threads - 1;
 
-        printf("O - Finished processing a request!\n");
-        *actual_args->active_threads--;
+        printf("O %d - Finished processing a request!\n", actual_args->id);
     }    
 
+    printf("O %d - Freeing memory\n", actual_args->id);
     free(actual_args);
 
 

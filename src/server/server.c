@@ -31,7 +31,6 @@ int main(int argc, char* argv[]) {
 
 
     /* Check if the admin's password respects the desired conditions */
-    // TODO: check if this is the correct way of dealing with the password, account for the quotes or not?    
     if (strlen(argv[2]) < MIN_PASSWORD_LEN || strlen(argv[2]) > MAX_PASSWORD_LEN) {
         printf("Invalid password! Must have at least %d characters and a maximum of %d. \n", MIN_PASSWORD_LEN, MAX_PASSWORD_LEN);
         return ARGS_ERROR;
@@ -70,6 +69,9 @@ int main(int argc, char* argv[]) {
     
     /* This variable is set to 1 by one of the threads when the admin orders the server's shutdown */
     int shutdown = 0;
+    /* This variable is set to 0 when the server's FIFO is empty */
+    int fifo_eof = 0;
+
 
 
     /* Open logfile for the server */
@@ -94,13 +96,16 @@ int main(int argc, char* argv[]) {
 
     /* Create counter threads */
     pthread_t threads[num_offices + 1];
-    threads[MAIN_THREAD_ID] = MAIN_THREAD_ID;
+    threads[MAIN_THREAD_ID] = pthread_self();
+    int active_threads = 0;
     for (int i = 1; i <= num_offices; i++) {
 
         office_args_t *args = malloc(sizeof(office_args_t));
         args->log_fd = logfile_fd;
         args->id = i;
         args->shutdown = &shutdown;
+        args->fifo_eof = &fifo_eof;
+        args->active_threads = &active_threads;
         args->accounts = accounts;
         args->account_mutex = account_mutex;
         args->queue = queue;
@@ -129,7 +134,7 @@ int main(int argc, char* argv[]) {
        If the server is ordered to shutdown this loop will end */
     int request_size = sizeof(tlv_request_t);
     tlv_request_t request_buf;
-    int fifo_eof = 0;
+
     
     while (!shutdown || !fifo_eof) {
 
@@ -139,6 +144,7 @@ int main(int argc, char* argv[]) {
             printf("S - Server entered shutdown mode!\n");
         }
 
+        //printf("S - Active offices : %d\n", active_threads);
         printf("S - Locking queue to check if it's full\n");
         pthread_mutex_lock(&queue_lock);
         printf("S - Checking if queue is full\n");
@@ -153,9 +159,8 @@ int main(int argc, char* argv[]) {
         fifo_eof = read(request_fd, &request_buf, request_size);
 
         if (fifo_eof > 0) {     // TODO: deal with errors
-            printf("S - Got a request!\n");
+            printf("S - ========== Got a request! =========\n");
 
-            
             pthread_mutex_lock(&queue_lock);
             if (logSyncMech(logfile_fd, MAIN_THREAD_ID, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_PRODUCER, request_buf.value.header.pid) < 0) {
                 printf("Error writing to logfile! \n");
@@ -175,28 +180,39 @@ int main(int argc, char* argv[]) {
             }
 
             printf("S - Going to start looking for a new request!\n");
-        } 
-    }
+        }
 
+        printf("S - ========= FIFO_EOF : %d ========== \n", fifo_eof);
+    }
+    
+
+    printf("S - ========= FIFO_EOF : %d ========== \n", fifo_eof);
+    printf("S - Broadcast\n");
+    pthread_cond_broadcast(&empty_cond);
 
     /* Close and request FIFO from systme because the shutdown command was received */
     close(request_fd);
+    printf("S - Closed FIFO\n");
     remove(SERVER_FIFO_PATH);
+    printf("S - Removed FIFO\n");
 
 
-    /* Wait for all requests in the queue to be processed */
+    /* Wait for all requests in the queue to be processed */    
     for (int i = 1; i <= num_offices; i++) {
+        printf("S - Waiting on office %d\n", i);
         pthread_join(threads[i], NULL);
 
         /* Log the closure of the office to the server logfile */
         if (logBankOfficeClose(logfile_fd, i, threads[i]) < 0) {
             printf("Error writing to logfile!\n");
-        } 
+        }
     }
 
+    printf("S - Closed all offices\n");
 
     /* Close the server's logfile */
     close(logfile_fd);
+    printf("S - Closed server logfile\n");
 
     return 0;
 }
