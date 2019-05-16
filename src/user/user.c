@@ -196,6 +196,13 @@ int main(int argc,char* argv[]) {
     }  
 
 
+
+    close(file_creator);
+    close(fd1);
+    close(fd2);
+    remove(fifo_name);
+
+
     return RC_OK;
 
 }
