@@ -19,41 +19,27 @@ void create_request(instruction *data, tlv_request_t *request){
     {
     case 0:
         request->type = OP_CREATE_ACCOUNT;
+        request->length = sizeof(req_create_account_t);
         break;
 
     case 1:
         request->type = OP_BALANCE;
+        request->length = 0;
         break;
 
     case 2:
         request->type = OP_TRANSFER;
+        request->length = sizeof(req_transfer_t);
         break;
 
     case 3:
         request->type = OP_SHUTDOWN;
+        request->length = 0;
         break;
     
     default:
         break;
     }
-
-    switch (request->type) {
-        case OP_CREATE_ACCOUNT: 
-            request->length = sizeof(req_create_account_t);
-            break;
-        case OP_BALANCE:
-            request->length = 0;
-            break;
-        case OP_TRANSFER:
-            request->length = sizeof(req_transfer_t);
-            break;
-        case OP_SHUTDOWN:
-            request->length = 0;
-            break;
-        default:
-            printf("error in length\n");
-    }
-
     
 
 
