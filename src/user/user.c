@@ -100,7 +100,7 @@ int main(int argc,char* argv[]) {
     data = create_instruction();
 
     if(get_arguments(argc, argv, data) == -1){
-        printf("Can not extract arguments");
+        printf("Can not extract arguments\n");
 
         return RC_OTHER;
     }
