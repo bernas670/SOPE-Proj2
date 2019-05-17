@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
     bank_account_t accounts[MAX_BANK_ACCOUNTS + 1];
     bank_account_t admin_account;
     admin_account.account_id = ERROR_ACCOUNT_ID;
-    for (int i = 1; i <= MAX_BANK_ACCOUNTS + 1; i++) {
+    for (int i = 1; i <= MAX_BANK_ACCOUNTS; i++) {
         accounts[i] = admin_account;
     }
     pthread_mutex_t account_mutex[MAX_BANK_ACCOUNTS + 1];
