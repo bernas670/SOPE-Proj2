@@ -7,3 +7,6 @@ Client/server application that simulates the realizaton of banking operations th
 * **Contributors** : [Bernardo Santos](https://github.com/bernas670), [Vítor Gonçalves](https://github.com/torrinheira), [António Dantas](https://github.com/antoniopedrodantas)
 * **Specification** : [Portuguese](specification.pdf)
 * **License** : [MIT](LICENSE)
+
+## Report
+    [click here](https://docs.google.com/document/d/1utjFu8-0T5fDLNAqVEi_IYlQlthEUgodKl9eNPKsovo/edit)
