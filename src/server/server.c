@@ -15,9 +15,6 @@
 #define HASH_ERROR 2
 
 
-//bank_account_t accounts[MAX_BANK_ACCOUNTS + 1];
-
-
 int main(int argc, char* argv[]) {
 
     if (argc != 3) {
@@ -51,6 +48,15 @@ int main(int argc, char* argv[]) {
     pthread_mutex_t account_mutex[MAX_BANK_ACCOUNTS + 1];
 
 
+    /* This variable is set to 1 by one of the threads when the admin orders the server's shutdown */
+    int shutdown = 0;
+
+
+    /* Open logfile for the server */
+    int logfile_fd = open(SERVER_LOGFILE, O_WRONLY | O_CREAT | O_APPEND, 0666); // TODO: deal with errors
+    /* Logfile is created and open */
+    
+    
     /* Create admin account */
     admin_account.account_id = ADMIN_ACCOUNT_ID;
     admin_account.balance = 0;
@@ -67,18 +73,10 @@ int main(int argc, char* argv[]) {
     /* Add the admins account to the array */
     accounts[ADMIN_ACCOUNT_ID] = admin_account;
     pthread_mutex_init(&account_mutex[ADMIN_ACCOUNT_ID], NULL);     // TODO: deal with errors
+    logAccountCreation(logfile_fd, MAIN_THREAD_ID, &accounts[ADMIN_ACCOUNT_ID]);
     /* Admin account created successfuly */
 
     
-    /* This variable is set to 1 by one of the threads when the admin orders the server's shutdown */
-    int shutdown = 0;
-
-
-    /* Open logfile for the server */
-    int logfile_fd = open(SERVER_LOGFILE, O_WRONLY | O_CREAT | O_APPEND, 0666); // TODO: deal with errors
-    /* Logfile is created and open */
-
-
     /* Create a request queue, for the server to store the requests */
     request_queue_t *queue = create_request_queue(num_offices);
     if (queue == NULL) {
@@ -142,78 +140,58 @@ int main(int argc, char* argv[]) {
         if (shutdown && fifo_open) {
             fifo_open = 0;
             chmod(SERVER_FIFO_PATH, 0444);  // TODO: deal with errors
-            printf("S - Server entered shutdown mode!\n");
         }
 
-        //printf("S - Active offices : %d\n", active_threads);
-        printf("S - Locking queue to check if it's full\n");
         pthread_mutex_lock(&queue_lock);
-        printf("S - Checking if queue is full\n");
         while(is_full(queue)) {
             pthread_cond_wait(&full_cond, &queue_lock);
         }
-        printf("S - Unlocking queue\n");
         pthread_mutex_unlock(&queue_lock);
-
-        //printf("S - Waiting for a request...\n");
 
         fifo_eof = read(request_fd, &request_buf, request_size);
 
         if (fifo_eof > 0) {     // TODO: deal with errors
-            printf("S - ========== Got a request! =========\n");
 
             pthread_mutex_lock(&queue_lock);
             if (logSyncMech(logfile_fd, MAIN_THREAD_ID, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_PRODUCER, request_buf.value.header.pid) < 0) {
                 printf("Error writing to logfile! \n");
             }
             
-            printf("S - Going to add a request to the queue\n");
             if (push(queue, request_buf)) {
                 printf("Could not add request to queue, queue is full! \n");
             }
-            printf("S - Added a request to the queue\n");
+            logRequest(logfile_fd, MAIN_THREAD_ID, &request_buf);
             pthread_cond_signal(&empty_cond);
 
-            printf("S - Going to unlock the queue\n");
             pthread_mutex_unlock(&queue_lock);
             if (logSyncMech(logfile_fd, MAIN_THREAD_ID, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_PRODUCER, request_buf.value.header.pid) < 0) {
                 printf("Error writing to logfile! \n");
             }
-
-            printf("S - Going to start looking for a new request!\n");
         }
-
-        printf("S - ========= FIFO_EOF : %d ========== \n", fifo_eof);
     }
     
 
-    printf("S - ========= FIFO_EOF : %d ========== \n", fifo_eof);
-    printf("S - Broadcast\n");
     pthread_cond_broadcast(&empty_cond);
+    if (logSyncMech(logfile_fd, MAIN_THREAD_ID, SYNC_OP_COND_SIGNAL, SYNC_ROLE_PRODUCER, 0) < 0) {
+        printf("Error writing to logfile\n");
+    }
 
     /* Close and request FIFO from systme because the shutdown command was received */
     close(request_fd);
-    printf("S - Closed FIFO\n");
     remove(SERVER_FIFO_PATH);
-    printf("S - Removed FIFO\n");
 
 
     /* Wait for all requests in the queue to be processed */    
     for (int i = 1; i <= num_offices; i++) {
-        printf("S - Waiting on office %d\n", i);
         pthread_join(threads[i], NULL);
-
         /* Log the closure of the office to the server logfile */
         if (logBankOfficeClose(logfile_fd, i, threads[i]) < 0) {
             printf("Error writing to logfile!\n");
         }
     }
 
-    printf("S - Closed all offices\n");
-
     /* Close the server's logfile */
     close(logfile_fd);
-    printf("S - Closed server logfile\n");
 
     return 0;
 }

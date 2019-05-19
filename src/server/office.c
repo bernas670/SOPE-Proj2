@@ -13,37 +13,30 @@
 void *office_main(void *args) {
     office_args_t *actual_args = args;
 
-    /*
-    char buf[3];
-    sprintf(buf, "%d\n", actual_args->id);
-    write(actual_args->log_fd, buf, strlen(buf));
-    */
-
     /* The thread will keep looking for new requests, as long as the
        server is live or the request queue is not empty */
     while(true) {
 
-        printf("O %d - Going to lock the queue\n", actual_args->id);
-        pthread_mutex_lock(actual_args->queue_lock);        // TODO: log the action
-        printf("O %d - Locked the queue\n", actual_args->id);
-        printf("O %d - Checking if the queue is empty\n", actual_args->id);
-        while(is_empty(actual_args->queue) && !*actual_args->shutdown) {
-            printf("O %d - Queue is empty\n", actual_args->id);
-            //write(actual_args->log_fd, "O - Queue is empty", 19);
-            pthread_cond_wait(actual_args->empty_cond, actual_args->queue_lock);    // TODO: log the action
+        pthread_mutex_lock(actual_args->queue_lock);
+        if (logSyncMech(actual_args->log_fd, actual_args->id, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_CONSUMER, 0) < 0) {
+            printf("Error writing to logfile! \n");
         }
-        printf("O %d - Broadcast received\n", actual_args->id);        
-        //printf("O %d - shutdown : %d, empty : %d, eof : %d\n", actual_args->id, *actual_args->shutdown, is_empty(actual_args->queue), *actual_args->fifo_eof);
+
+        while(is_empty(actual_args->queue) && !*actual_args->shutdown) {
+            pthread_cond_wait(actual_args->empty_cond, actual_args->queue_lock);
+            if (logSyncMech(actual_args->log_fd, actual_args->id, SYNC_OP_COND_WAIT, SYNC_ROLE_CONSUMER, 0) < 0) {
+                printf("Error writing to logfile! \n");
+            }
+        }
+
         /* Exit condition for the thread */
         if (*actual_args->shutdown && is_empty(actual_args->queue)) {
-            pthread_mutex_unlock(actual_args->queue_lock);      // TODO: log this action
-            printf("O %d - Shutting down office\n", actual_args->id);
+            pthread_mutex_unlock(actual_args->queue_lock);   
+            if (logSyncMech(actual_args->log_fd, actual_args->id, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_CONSUMER, 0) < 0) {
+                printf("Error writing to logfile! \n");
+            }
             break;
         }
-        /*
-        printf("O %d - Going to unlock the queue\n", actual_args->id);
-        pthread_mutex_unlock(actual_args->queue_lock);      // TODO: log this action
-        */
 
         tlv_request_t request;
 
@@ -56,11 +49,15 @@ void *office_main(void *args) {
         */
 
         request = pop(actual_args->queue);
-        pthread_cond_signal(actual_args->full_cond);        // TODO: log this action
+        pthread_cond_signal(actual_args->full_cond);
+        if (logSyncMech(actual_args->log_fd, actual_args->id, SYNC_OP_COND_SIGNAL, SYNC_ROLE_CONSUMER, 0) < 0) {
+            printf("Error writing to logfile! \n");
+        }
 
-        pthread_mutex_unlock(actual_args->queue_lock);      // TODO: log this action
-
-        printf("O %d - Started processing a request!\n", actual_args->id);
+        pthread_mutex_unlock(actual_args->queue_lock);
+        if (logSyncMech(actual_args->log_fd, actual_args->id, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_CONSUMER, 0) < 0) {
+            printf("Error writing to logfile! \n");
+        }
 
         *actual_args->active_threads = *actual_args->active_threads + 1;
 
@@ -70,7 +67,7 @@ void *office_main(void *args) {
 
         switch (request.type) {
 
-            case OP_CREATE_ACCOUNT:     // TODO: apply delay and log the delay
+            case OP_CREATE_ACCOUNT:
 
                 reply.type = request.type;
                 reply.length = 0;
@@ -93,10 +90,15 @@ void *office_main(void *args) {
                 else {
                     pthread_mutex_init(&actual_args->account_mutex[request.value.create.account_id], NULL); // TODO: deal with errors
 
-                    pthread_mutex_lock(&actual_args->account_mutex[request.value.create.account_id]);       // TODO: log action
+                    pthread_mutex_lock(&actual_args->account_mutex[request.value.create.account_id]);
+                    if (logSyncMech(actual_args->log_fd, actual_args->id, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_ACCOUNT, request.value.header.pid) < 0) {
+                        printf("Error writing to logfile! \n");
+                    }
 
-                    logSyncDelay(actual_args->log_fd, actual_args->id, request.value.header.account_id, request.value.header.op_delay_ms * 1000);
                     usleep(request.value.header.op_delay_ms * 1000);           // TODO: deal with errors
+                    if (logSyncDelay(actual_args->log_fd, actual_args->id, request.value.header.account_id, request.value.header.op_delay_ms * 1000) < 0) {
+                        printf("Error writing to logfile! \n");
+                    }
 
                     bank_account_t new_account;
                     new_account.account_id = request.value.create.account_id;
@@ -114,12 +116,15 @@ void *office_main(void *args) {
 
                     logAccountCreation(actual_args->log_fd, actual_args->id, &new_account);
 
-                    pthread_mutex_unlock(&actual_args->account_mutex[request.value.create.account_id]);     // TODO: log action
+                    pthread_mutex_unlock(&actual_args->account_mutex[request.value.create.account_id]);
+                    if (logSyncMech(actual_args->log_fd, actual_args->id, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_ACCOUNT, request.value.header.pid) < 0) {
+                        printf("Error writing to logfile! \n");
+                    }
                 }
 
                 break;
             
-            case OP_BALANCE:        // TODO: implement delays and corresponding logs
+            case OP_BALANCE:
 
                 reply.type = request.type;
                 reply.length = sizeof(rep_balance_t);
@@ -140,14 +145,23 @@ void *office_main(void *args) {
                 }
                 /* get account balance */
                 else {
-                    pthread_mutex_lock(&actual_args->account_mutex[request.value.header.account_id]);       // TODO: log this action
+                    pthread_mutex_lock(&actual_args->account_mutex[request.value.header.account_id]);
+                    if (logSyncMech(actual_args->log_fd, actual_args->id, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_ACCOUNT, request.value.header.pid) < 0) {
+                        printf("Error writing to logfile! \n");
+                    }
 
-                    logSyncDelay(actual_args->log_fd, actual_args->id, request.value.header.account_id, request.value.header.op_delay_ms * 1000);
                     usleep(request.value.header.op_delay_ms * 1000);           // TODO: deal with errors
+                    if (logSyncDelay(actual_args->log_fd, actual_args->id, request.value.header.account_id, request.value.header.op_delay_ms * 1000) < 0) {
+                        printf("Error writing to logfile\n");
+                    }
 
                     reply.value.balance.balance = actual_args->accounts[request.value.header.account_id].balance;
+                    reply.value.header.ret_code = RC_OK;
 
-                    pthread_mutex_unlock(&actual_args->account_mutex[request.value.header.account_id]);     // TODO: log this action
+                    pthread_mutex_unlock(&actual_args->account_mutex[request.value.header.account_id]);
+                    if (logSyncMech(actual_args->log_fd, actual_args->id, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_ACCOUNT, request.value.header.pid) < 0) {
+                        printf("Error writing to logfile! \n");
+                    }
                 }
 
                 break;
@@ -157,7 +171,7 @@ void *office_main(void *args) {
                 reply.type = request.type;
                 reply.length = sizeof(rep_transfer_t);
                 reply.value.header.account_id = request.value.header.account_id;
-                reply.value.transfer.balance = 0;
+                reply.value.transfer.balance = request.value.transfer.amount;
 
                 /* check if neither of the accounts is the admin account */
                 if (request.value.header.account_id == ADMIN_ACCOUNT_ID || request.value.transfer.account_id == ADMIN_ACCOUNT_ID) {
@@ -190,18 +204,30 @@ void *office_main(void *args) {
                     /* In order to prevent deadlocks, the first account to get locked is always the one 
                        with the smallest id of the two */
                     if (origin_id > destination_id) {
-                        // TODO: log these actions
                         pthread_mutex_lock(&actual_args->account_mutex[destination_id]);
+                        if (logSyncMech(actual_args->log_fd, actual_args->id, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_ACCOUNT, request.value.header.pid) < 0) {
+                            printf("Error writing to logfile! \n");
+                        }
                         pthread_mutex_lock(&actual_args->account_mutex[origin_id]);
+                        if (logSyncMech(actual_args->log_fd, actual_args->id, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_ACCOUNT, request.value.header.pid) < 0) {
+                            printf("Error writing to logfile! \n");
+                        }
                     }
                     else {
-                        // TODO: log these actions
                         pthread_mutex_lock(&actual_args->account_mutex[origin_id]);
+                        if (logSyncMech(actual_args->log_fd, actual_args->id, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_ACCOUNT, request.value.header.pid) < 0) {
+                            printf("Error writing to logfile! \n");
+                        }
                         pthread_mutex_lock(&actual_args->account_mutex[destination_id]);
+                        if (logSyncMech(actual_args->log_fd, actual_args->id, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_ACCOUNT, request.value.header.pid) < 0) {
+                            printf("Error writing to logfile! \n");
+                        }
                     }
 
-                    logSyncDelay(actual_args->log_fd, actual_args->id, request.value.header.account_id, request.value.header.op_delay_ms * 1000);
                     usleep(request.value.header.op_delay_ms * 1000);           // TODO: deal with errors
+                    if (logSyncDelay(actual_args->log_fd, actual_args->id, request.value.header.account_id, request.value.header.op_delay_ms * 1000) < 0) {
+                        printf("Error writing to logfile\n");
+                    }
 
                     /* Now that the accounts are locked, we can check if the origin account has 
                        enough money to realize the transfer */
@@ -218,19 +244,22 @@ void *office_main(void *args) {
                         actual_args->accounts[destination_id].balance += request.value.transfer.amount;
 
                         reply.value.header.ret_code = RC_OK;
-                        reply.value.transfer.balance = actual_args->accounts[origin_id].balance;
                     }
 
-                    // TODO: log these actions
                     pthread_mutex_unlock(&actual_args->account_mutex[origin_id]);
+                    if (logSyncMech(actual_args->log_fd, actual_args->id, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_ACCOUNT, request.value.header.pid) < 0) {
+                        printf("Error writing to logfile! \n");
+                    }
                     pthread_mutex_unlock(&actual_args->account_mutex[destination_id]);
+                    if (logSyncMech(actual_args->log_fd, actual_args->id, SYNC_OP_MUTEX_UNLOCK, SYNC_ROLE_ACCOUNT, request.value.header.pid) < 0) {
+                        printf("Error writing to logfile! \n");
+                    }
 
                 }
 
                 break;
             
-            case OP_SHUTDOWN:       // FIXME: segmentation fault somewhere arround here
-                                    // TODO: add delay
+            case OP_SHUTDOWN:
 
                 reply.type = request.type;
                 reply.length = sizeof(rep_shutdown_t);
@@ -255,6 +284,11 @@ void *office_main(void *args) {
                     printf("O %d - Got the number of active threads\n", actual_args->id);
                     reply.value.header.ret_code = RC_OK;
                     printf("O %d - Built shutdown reply\n", actual_args->id);
+
+                    usleep(request.value.header.op_delay_ms * 1000);        // TODO: deal with errors
+                    if (logDelay(actual_args->log_fd, actual_args->id, request.value.header.op_delay_ms) < 0) {
+                        printf("Error writing to logfile\n");
+                    }
 
                 }
 
@@ -282,13 +316,13 @@ void *office_main(void *args) {
 
         close(user_fifo_fd);
 
-        logReply(actual_args->log_fd, actual_args->id, &reply);     // TODO: deal with errors
+        if (logReply(actual_args->log_fd, actual_args->id, &reply) < 0) {
+            printf("Error writing to logfile\n");
+        }
         *actual_args->active_threads = *actual_args->active_threads - 1;
 
-        printf("O %d - Finished processing a request!\n", actual_args->id);
     }    
     
-    printf("O %d - Freeing memory\n", actual_args->id);
     free(actual_args);
     
     pthread_exit(NULL);

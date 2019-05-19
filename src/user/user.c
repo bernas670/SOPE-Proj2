@@ -141,8 +141,41 @@ int main(int argc,char* argv[]) {
     fd2 = open(SERVER_FIFO_PATH, O_WRONLY|O_APPEND);
 
     if(write(fd2, &request, sizeof(request)) < 0){
-            printf("ERROR : server down\n");
-            return RC_SRV_DOWN;
+        tlv_reply_t reply;
+
+        reply.type = request.type;
+        reply.value.header.account_id = request.value.header.account_id;
+        reply.value.header.ret_code = RC_SRV_DOWN;
+        
+        switch (request.type) {
+            
+            case OP_CREATE_ACCOUNT:
+                reply.length = 0;
+            break;
+
+            case OP_BALANCE:
+                reply.value.balance.balance = 0;
+                reply.length = 0;
+            break;
+
+            case OP_TRANSFER:
+                reply.value.transfer.balance = request.value.transfer.amount;
+                reply.length = 0;
+            break;
+
+            case OP_SHUTDOWN:
+                reply.value.shutdown.active_offices = 0;
+                reply.length = 0;
+            break;
+
+            default:
+            break;
+        }
+
+        reply.value.header.ret_code = RC_SRV_DOWN;      // FIXME: server down error
+        logReply(file_creator, getPid(data), &reply);
+        logReply(STDOUT_FILENO, getPid(data), &reply);
+        return RC_SRV_DOWN;
     }
     
     
@@ -155,9 +188,9 @@ int main(int argc,char* argv[]) {
 
 
     time_t endwait;
-    int seconds=FIFO_TIMEOUT_SECS;
+    int seconds = FIFO_TIMEOUT_SECS;
 
-    endwait= seconds + time(NULL);
+    endwait = seconds + time(NULL);
 
     tlv_reply_t reply; 
 

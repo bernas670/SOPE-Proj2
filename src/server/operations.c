@@ -17,7 +17,7 @@ void generateSalt(bank_account_t* account) {
     }
     account->salt[SALT_LEN] = '\0';
 
-    printf("Salt : %s\n", account->salt);
+    //printf("Salt : %s\n", account->salt);
 }
 
 
@@ -41,8 +41,8 @@ int generateHash(char* password, bank_account_t* account, char* hash) {
     strcpy(hash, buf);
 
     
-    printf("Password : %s\n", password);
-    printf("Hash : %s\n", hash);
+    //printf("Password : %s\n", password);
+    //printf("Hash : %s\n", hash);
     
 
     return 0;      
