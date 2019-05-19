@@ -15,7 +15,11 @@ OBJS_USER = $(ODIR)/args.o $(ODIR)/user.o $(ODIR)/log.o $(ODIR)/instruction.o
 
 .PHONY: all clean
 
-all: $(TARGET_SERVER) $(TARGET_USER)
+
+all: build_dir $(TARGET_SERVER) $(TARGET_USER)
+	
+build_dir:
+	mkdir -p $(ODIR)
 
 $(TARGET_SERVER) : $(OBJS_SERVER)
 	$(CC) $(CFLAGS) -o $(TARGET_SERVER) $(OBJS_SERVER)
@@ -42,5 +46,6 @@ $(ODIR)/%.o: $(SRC_USER)/%.c
 clean:
 	rm -f $(TARGET_SERVER) $(ODIR)/*.o $(ODIR)/*.d $(ODIR)/*.i $(ODIR)/*.s *.txt
 	rm -f $(TARGET_USER) $(ODIR)/*.o $(ODIR)/*.d $(ODIR)/*.i $(ODIR)/*.s *.txt
+	rmdir $(ODIR)
 
 -include $(TARGET:=.d)
