@@ -17,7 +17,6 @@ void generateSalt(bank_account_t* account) {
     }
     account->salt[SALT_LEN] = '\0';
 
-    //printf("Salt : %s\n", account->salt);
 }
 
 
@@ -28,7 +27,6 @@ int generateHash(char* password, bank_account_t* account, char* hash) {
 
     sprintf(buf, "echo -n %s%s | sha256sum", password, account->salt);
 
-    // TODO: change popen to pipes
     FILE* filep = popen(buf, "r"); //READ-ONLY
 
     if (filep == NULL)
@@ -38,12 +36,7 @@ int generateHash(char* password, bank_account_t* account, char* hash) {
     pclose(filep);
 
     buf[HASH_LEN] = '\0';
-    strcpy(hash, buf);
-
-    
-    //printf("Password : %s\n", password);
-    //printf("Hash : %s\n", hash);
-    
+    strcpy(hash, buf);    
 
     return 0;      
 }
@@ -53,8 +46,6 @@ int authenticate(char* password, bank_account_t* account) {
 
     char hash[HASH_LEN + 1];
     generateHash(password, account, hash);
-
-    printf("Generated hash : %s\nAccount hash : %s\n", hash, account->hash);
 
     if (strcmp(hash, account->hash)) {
         return 0;

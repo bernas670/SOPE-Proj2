@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
 
 
     /* Open logfile for the server */
-    int logfile_fd = open(SERVER_LOGFILE, O_WRONLY | O_CREAT | O_APPEND, 0666); // TODO: deal with errors
+    int logfile_fd = open(SERVER_LOGFILE, O_WRONLY | O_CREAT | O_APPEND, 0666);
     /* Logfile is created and open */
     
     
@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
 
     /* Add the admins account to the array */
     accounts[ADMIN_ACCOUNT_ID] = admin_account;
-    pthread_mutex_init(&account_mutex[ADMIN_ACCOUNT_ID], NULL);     // TODO: deal with errors
+    pthread_mutex_init(&account_mutex[ADMIN_ACCOUNT_ID], NULL);
     logAccountCreation(logfile_fd, MAIN_THREAD_ID, &accounts[ADMIN_ACCOUNT_ID]);
     /* Admin account created successfuly */
 
@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     pthread_mutex_t queue_lock;
-    pthread_mutex_init(&queue_lock, NULL);                         // TODO: deal with errors
+    pthread_mutex_init(&queue_lock, NULL);
 
     pthread_cond_t empty_cond, full_cond;
     pthread_cond_init(&empty_cond, NULL);
@@ -111,7 +111,7 @@ int main(int argc, char* argv[]) {
         args->empty_cond = &empty_cond;
         args->full_cond = &full_cond;
 
-        pthread_create(&threads[i], NULL, office_main, args);       // TODO: deal with errors
+        pthread_create(&threads[i], NULL, office_main, args);
 
         /* Log the openning of the office to the server logfile */
         if (logBankOfficeOpen(logfile_fd, i, threads[i]) < 0) {
@@ -122,8 +122,8 @@ int main(int argc, char* argv[]) {
 
 
     /* Create and open FIFO */
-    mkfifo(SERVER_FIFO_PATH, 0666);                                 // TODO: deal with errors
-    int request_fd = open(SERVER_FIFO_PATH, O_RDONLY | O_NONBLOCK); // TODO: deal with errors
+    mkfifo(SERVER_FIFO_PATH, 0666);                                
+    int request_fd = open(SERVER_FIFO_PATH, O_RDONLY | O_NONBLOCK);
     int fifo_open = 1;
     /* FIFO is created and open */
 
@@ -139,7 +139,7 @@ int main(int argc, char* argv[]) {
 
         if (shutdown && fifo_open) {
             fifo_open = 0;
-            chmod(SERVER_FIFO_PATH, 0444);  // TODO: deal with errors
+            chmod(SERVER_FIFO_PATH, 0444);
         }
 
         pthread_mutex_lock(&queue_lock);
@@ -150,7 +150,7 @@ int main(int argc, char* argv[]) {
 
         fifo_eof = read(request_fd, &request_buf, request_size);
 
-        if (fifo_eof > 0) {     // TODO: deal with errors
+        if (fifo_eof > 0) {
 
             pthread_mutex_lock(&queue_lock);
             if (logSyncMech(logfile_fd, MAIN_THREAD_ID, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_PRODUCER, request_buf.value.header.pid) < 0) {

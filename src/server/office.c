@@ -40,14 +40,6 @@ void *office_main(void *args) {
 
         tlv_request_t request;
 
-        /*
-        printf("O %d - Locked the queue to get a request\n", actual_args->id);
-        pthread_mutex_lock(actual_args->queue_lock);
-        if (logSyncMech(actual_args->log_fd, actual_args->id, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_CONSUMER, request.value.header.pid) < 0) {
-                printf("Error writing to logfile! \n");
-        }
-        */
-
         request = pop(actual_args->queue);
         pthread_cond_signal(actual_args->full_cond);
         if (logSyncMech(actual_args->log_fd, actual_args->id, SYNC_OP_COND_SIGNAL, SYNC_ROLE_CONSUMER, 0) < 0) {
@@ -61,7 +53,7 @@ void *office_main(void *args) {
 
         *actual_args->active_threads = *actual_args->active_threads + 1;
 
-        logRequest(actual_args->log_fd, actual_args->id, &request);     // TODO: deal with errors
+        logRequest(actual_args->log_fd, actual_args->id, &request);
 
         tlv_reply_t reply;
 
@@ -88,14 +80,14 @@ void *office_main(void *args) {
                 }
                 /* create the account */
                 else {
-                    pthread_mutex_init(&actual_args->account_mutex[request.value.create.account_id], NULL); // TODO: deal with errors
+                    pthread_mutex_init(&actual_args->account_mutex[request.value.create.account_id], NULL);
 
                     pthread_mutex_lock(&actual_args->account_mutex[request.value.create.account_id]);
                     if (logSyncMech(actual_args->log_fd, actual_args->id, SYNC_OP_MUTEX_LOCK, SYNC_ROLE_ACCOUNT, request.value.header.pid) < 0) {
                         printf("Error writing to logfile! \n");
                     }
 
-                    usleep(request.value.header.op_delay_ms * 1000);           // TODO: deal with errors
+                    usleep(request.value.header.op_delay_ms * 1000);
                     if (logSyncDelay(actual_args->log_fd, actual_args->id, request.value.header.account_id, request.value.header.op_delay_ms * 1000) < 0) {
                         printf("Error writing to logfile! \n");
                     }
@@ -150,7 +142,7 @@ void *office_main(void *args) {
                         printf("Error writing to logfile! \n");
                     }
 
-                    usleep(request.value.header.op_delay_ms * 1000);           // TODO: deal with errors
+                    usleep(request.value.header.op_delay_ms * 1000);
                     if (logSyncDelay(actual_args->log_fd, actual_args->id, request.value.header.account_id, request.value.header.op_delay_ms * 1000) < 0) {
                         printf("Error writing to logfile\n");
                     }
@@ -224,7 +216,7 @@ void *office_main(void *args) {
                         }
                     }
 
-                    usleep(request.value.header.op_delay_ms * 1000);           // TODO: deal with errors
+                    usleep(request.value.header.op_delay_ms * 1000);
                     if (logSyncDelay(actual_args->log_fd, actual_args->id, request.value.header.account_id, request.value.header.op_delay_ms * 1000) < 0) {
                         printf("Error writing to logfile\n");
                     }
@@ -277,15 +269,11 @@ void *office_main(void *args) {
                 /* order the shutdown */
                 else {  
                     
-                    printf("O %d - Start building shutdown reply\n", actual_args->id);
                     *actual_args->shutdown = 1;
-                    printf("O %d - Shutdown flag is set\n", actual_args->id);
-                    reply.value.shutdown.active_offices = *actual_args->active_threads;
-                    printf("O %d - Got the number of active threads\n", actual_args->id);
+                    reply.value.shutdown.active_offices = *actual_args->active_threads - 1;
                     reply.value.header.ret_code = RC_OK;
-                    printf("O %d - Built shutdown reply\n", actual_args->id);
 
-                    usleep(request.value.header.op_delay_ms * 1000);        // TODO: deal with errors
+                    usleep(request.value.header.op_delay_ms * 1000);
                     if (logDelay(actual_args->log_fd, actual_args->id, request.value.header.op_delay_ms) < 0) {
                         printf("Error writing to logfile\n");
                     }
@@ -304,7 +292,7 @@ void *office_main(void *args) {
         char user_fifo[20];
         sprintf(user_fifo, "%s%d", USER_FIFO_PATH_PREFIX, request.value.header.pid);
 
-        int user_fifo_fd = open(user_fifo, O_WRONLY | O_APPEND | O_NONBLOCK);       // TODO: deal with errors (errno is set accordingly)
+        int user_fifo_fd = open(user_fifo, O_WRONLY | O_APPEND | O_NONBLOCK);
 
         if (user_fifo_fd < 0) {
             reply.value.header.ret_code = RC_USR_DOWN;

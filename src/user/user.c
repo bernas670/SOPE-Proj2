@@ -172,7 +172,7 @@ int main(int argc,char* argv[]) {
             break;
         }
 
-        reply.value.header.ret_code = RC_SRV_DOWN;      // FIXME: server down error
+        reply.value.header.ret_code = RC_SRV_DOWN;
         logReply(file_creator, getPid(data), &reply);
         logReply(STDOUT_FILENO, getPid(data), &reply);
         return RC_SRV_DOWN;
