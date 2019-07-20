@@ -10,3 +10,6 @@ Client/server application that simulates the realizaton of banking operations th
 
 ## Report
 The final report can be found in portuguese [here](report.pdf).
+
+## Final Grade
+16.8 / 20.0
