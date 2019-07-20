@@ -9,4 +9,4 @@ Client/server application that simulates the realizaton of banking operations th
 * **License** : [MIT](LICENSE)
 
 ## Report
-* **here** : [click to edit](https://docs.google.com/document/d/1utjFu8-0T5fDLNAqVEi_IYlQlthEUgodKl9eNPKsovo/edit)
+The final report can be found in portuguese [here](report.pdf).
